@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "electron .",
+    "test": "node test.js",
     "build:osx": "electron-builder --mac",
     "build:mac": "electron-builder --mac",
     "build:win": "electron-builder --win --x64",

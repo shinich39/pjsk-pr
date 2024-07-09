@@ -100,6 +100,7 @@ function createTable() {
       {title: "🔑", field: "roomId", sorter: "string", width: 64,},
       {title: "ベテラン", field: "isVeteranRoom", width: 68, ...BOOLEAN_OPTIONS},
       {title: "🦐",field: "isEnvyRoom", width: 48, ...BOOLEAN_OPTIONS},
+      {title: "ロスエン",field: "isLosuenRoom", width: 68, ...BOOLEAN_OPTIONS},
       {title: "おまかせ", field: "isRandomSong", width: 68, ...BOOLEAN_OPTIONS},
       {title: "3DMV", field: "isMVRoom", width: 56, ...BOOLEAN_OPTIONS},
       {title: "火消し", field: "allowPlayForStaminaEmpty", width: 56, ...BOOLEAN_OPTIONS},
@@ -143,7 +144,7 @@ function parsePostContent(str) {
   str = util.toHalfWidth(str)
     .toLowerCase()
     .replace(/[･・┆┊︎꒰꒱|_\-=[\]()*&\$<>{}\:\^!?]/g, "")
-    .replace(/[🙅🙅‍♂️🙅‍♀️⛔🚫✕]/g, "❌")
+    .replace(/🙅|🙅‍♂️|🙅‍♀️|⛔|🚫|✕/g, "❌")
     .replace(/[^\S\r\n]+/g, " ")
     .replace(/\r\n/g, "\n")
     .replace(/\n+/g, "\n");
@@ -151,6 +152,7 @@ function parsePostContent(str) {
   const roomId = /[^@0-9]([0-9][0-9][0-9][0-9][0-9])[^回0-9]/.exec(str)?.[1];
   const isVeteranRoom = /ベテラン/.test(str);
   const isEnvyRoom = /(🦐|エビ|エンヴィー)/.test(str) && !/(🦐|エビ|エンヴィー)[^\n]{0,2}(不|x|no|❌)/.test(str);
+  const isLosuenRoom = /(ロスエン)/.test(str) && !/(ロスエン)[^\n]{0,2}(不|x|no|❌)/.test(str); // ロストエンファウンド
   const isMVRoom = /(3dmv|mv)/.test(str) && !/(3dmv|mv)[^\n]{0,2}(不|x|no|❌)/.test(str);
   const isSelectSong = /(選曲)/.test(str) && !/(選曲)[^\n]{0,2}(不|x|no|❌)/.test(str);
   const isRandomSong = /(おまかせ)/.test(str) && !/(おまかせ)[^\n]{0,2}(不|x|no|❌)/.test(str);
@@ -165,6 +167,7 @@ function parsePostContent(str) {
     roomId,
     isVeteranRoom,
     isEnvyRoom,
+    isLosuenRoom,
     isMVRoom,
     isSelectSong,
     isRandomSong,
@@ -182,9 +185,10 @@ function getWriteModalValues() {
   const isVeteranRoom = document.getElementById("write-room-type-1").checked;
   const isRandomRoom = document.getElementById("write-room-type-2").checked;
   const isEnvyRoom = document.getElementById("write-room-type-3").checked;
-  const isMVRoom = document.getElementById("write-room-type-4").checked;
-  const allowPlayForStaminaEmpty = document.getElementById("write-room-type-5").checked;
-  const allowEasyModeWithAFK = document.getElementById("write-room-type-6").checked;
+  const isLosuenRoom = document.getElementById("write-room-type-4").checked;
+  const isMVRoom = document.getElementById("write-room-type-5").checked;
+  const allowPlayForStaminaEmpty = document.getElementById("write-room-type-6").checked;
+  const allowEasyModeWithAFK = document.getElementById("write-room-type-7").checked;
   const maxPlay = document.querySelector("input[name='write-max-play']:checked").value;
   const playersNeeded = document.querySelector("input[name='write-players-needed']:checked").value;
   const hostRank = document.querySelector("input[name='write-host-rank']:checked").value;
@@ -198,6 +202,7 @@ function getWriteModalValues() {
     isVeteranRoom,
     isRandomRoom,
     isEnvyRoom,
+    isLosuenRoom,
     isMVRoom,
     allowPlayForStaminaEmpty,
     allowEasyModeWithAFK,
@@ -216,9 +221,10 @@ function clearWriteModalValues() {
   document.getElementById("write-room-type-1").checked = true; // isVeteranRoom
   document.getElementById("write-room-type-2").checked = false; // isRandomRoom
   document.getElementById("write-room-type-3").checked = false; // isEnvyRoom
-  document.getElementById("write-room-type-4").checked = false; // isMVRoom
-  document.getElementById("write-room-type-5").checked = true; // allowPlayForStaminaEmpty
-  document.getElementById("write-room-type-6").checked = false; // allowEasyModeWithAFK
+  document.getElementById("write-room-type-4").checked = false; // isLosuenRoom
+  document.getElementById("write-room-type-5").checked = false; // isMVRoom
+  document.getElementById("write-room-type-6").checked = true; // allowPlayForStaminaEmpty
+  document.getElementById("write-room-type-7").checked = false; // allowEasyModeWithAFK
   document.querySelectorAll("input[name='write-max-play']").forEach(e => e.checked = false);
   document.querySelectorAll("input[name='write-players-needed']").forEach(e => e.checked = false);
   document.querySelectorAll("input[name='write-host-rank']").forEach(e => e.checked = false);
@@ -248,6 +254,7 @@ function createPostContent() {
     isVeteranRoom,
     isRandomRoom,
     isEnvyRoom,
+    isLosuenRoom,
     isMVRoom,
     allowPlayForStaminaEmpty,
     allowEasyModeWithAFK,
@@ -266,6 +273,9 @@ function createPostContent() {
   }
   if (isEnvyRoom) {
     text += "🦐 ";
+  }
+  if (isLosuenRoom) {
+    text += "ロスエン ";
   }
   if (isRandomRoom) {
     text += "おまかせ ";
@@ -316,6 +326,7 @@ function renderRoomModal() {
     isVeteranRoom,
     isRandomRoom,
     isEnvyRoom,
+    isLosuenRoom,
     isMVRoom,
     allowPlayForStaminaEmpty,
     allowEasyModeWithAFK,
@@ -349,6 +360,9 @@ function renderRoomModal() {
   }
   if (isEnvyRoom) {
     opt += `<span class="badge text-bg-primary">🦐</span>\n`;
+  }
+  if (isLosuenRoom) {
+    opt += `<span class="badge text-bg-primary">ロスエン</span>\n`;
   }
   if (isRandomRoom) {
     opt += `<span class="badge text-bg-primary">おまかせ</span>\n`;

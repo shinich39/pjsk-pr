@@ -8,7 +8,7 @@ Search for Project SEKAI public room from twitter.
 
 ## Features
 
-- Search public room.
+- Search public rooms created in 1 hour.
 - ルームID, 更新時間, 部屋のタイプ(フリーとベテラン), 🦐, おまかせ, MV, 火消し, プレー回数, 募集している人数, 募集条件...
 - Highlight on updated room.
 - Create a public room with simply settings.
@@ -33,6 +33,7 @@ Search for Project SEKAI public room from twitter.
 | 🔑 | Room ID | 
 | ベテラン | Veteran Room | 
 | 🦐 | Play only "独りんぼエンヴィー" | 
+| ロスエン | Play only "ロストエンファウンド" | 
 | おまかせ | Play only random song | 
 | 3DMV | Play 3DMV mode (Do not set default clothes) | 
 | 火消し | Allow play for stamina empty | 
@@ -48,3 +49,7 @@ Search for Project SEKAI public room from twitter.
 2. Sign in to twitter. (need to once)
 3. Wait for loading or create a new room.
 4. Play game and update room.
+
+## updates
+
+- Add ロスエン field.

@@ -346,4 +346,9 @@ getMsg("console", function(err, msg) {
   } else {
     mainWindow.webContents.openDevTools();
   }
+  if (collectorWindow.webContents.isDevToolsOpened()) {
+    collectorWindow.webContents.closeDevTools();
+  } else {
+    collectorWindow.webContents.openDevTools();
+  }
 });

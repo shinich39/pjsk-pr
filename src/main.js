@@ -49,7 +49,13 @@ if (!DEBUG) {
   Menu.setApplicationMenu(false);
 }
 
-let mainWindow, collectorWindow, writerWindow, updaterWindow;
+let mainWindow, 
+    collectorWindow,
+    writerWindow,
+    updaterWindow,
+    isInitialized = false,
+    isLoggedIn = false,
+    loginInterval;
 
 function createWindow() {
   // Create the browser window.
@@ -57,13 +63,12 @@ function createWindow() {
     width: 1024,
     height: 1024,
     webPreferences: {
-      preload: path.join(__dirname, 'js', 'login.js'),
+      preload: path.join(__dirname, 'js', 'preload.js'),
       worldSafeExecuteJavaScript: true,
       // https://www.electronjs.org/docs/latest/tutorial/security
       contextIsolation: true,
       nodeIntegration: false,
     },
-    show: false,
   });
   mainWindow.loadURL('https://x.com/home');
   // mainWindow.webContents.openDevTools();
@@ -181,6 +186,14 @@ app.on('window-all-closed', () => {
  */
 function onWindowLoad() {
   console.log(`${APP_NAME} window loaded.`);
+
+  if (!isLoggedIn && !isInitialized) {
+    loginInterval = setInterval(function() {
+      sendMsg("chk-login");
+    }, 1000);
+
+    isInitialized = true;
+  }
 }
 /**
  * 
@@ -240,23 +253,17 @@ getMsg("open-git", function(err, msg) {
   shell.openExternal("https://github.com/shinich39/pjsk-pr");
 });
 
-getMsg("show-login", function(err, msg) {
-  if (err) {
-    console.error(err);
-    return;
-  }
-  mainWindow.show();
-});
-
 getMsg("login", function(err, msg) {
   if (err) {
     console.error(err);
     return;
   }
 
-  if (msg && !collectorWindow) {
+  if (msg) {
+    console.log("twitter login successful.");
+    clearInterval(loginInterval);
+    isLoggedIn = true;
     mainWindow.loadFile('src/views/index.html');
-    mainWindow.show();
     createCollectorWindow();
   }
 });
@@ -284,7 +291,6 @@ getMsg("write-post", async function(err, msg) {
     console.error(err);
     return;
   }
-
   await createWriterWindow(`${WRITE_URL}${encodeURIComponent(msg)}`);
 });
 
@@ -293,7 +299,6 @@ getMsg("update-post", async function(err, msg) {
     console.error(err);
     return;
   }
-
   await createUpdaterWindow(`${WRITE_URL}${encodeURIComponent(msg)}`);
 });
 

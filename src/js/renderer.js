@@ -9,10 +9,9 @@ const writeModal = new bootstrap.Modal('#write-modal', { keyboard: false });
 const roomModal = new bootstrap.Modal('#room-modal', { keyboard: false });
 // init luxon.js
 window.DateTime = luxon.DateTime;
-window.Interval = luxon.Interval;
 const ROW_BACKGROUND_COLORSET= ["#bcbcbc", "#ffabab", "#ffbcbc", "#ffcdcd", "#ffdfdf"];
 const EXPIRE_TIME = 1000 * 60 * 60; // a hour
-const EXPIRE_DELAY = 1000 * 30; // 30 sec
+const EXPIRE_DELAY = 1000 * 10; // 10 sec
 const BOOLEAN_OPTIONS = {
   sorter: "boolean",
   formatter: "tickCross",
@@ -97,28 +96,25 @@ function createTable() {
     ...ROW_FORMATTER,
     ...ROW_CLICK_POPUP,
     columns: [
-      {title: "📅", field: "date", width: 64, ...DATE_OPTIONS},
+      {title: "🕒", field: "date", width: 64, ...DATE_OPTIONS},
       {title: "🔑", field: "roomId", sorter: "string", width: 64,},
       {title: "ベテラン", field: "isVeteranRoom", width: 68, ...BOOLEAN_OPTIONS},
       {title: "🦐",field: "isEnvyRoom", width: 48, ...BOOLEAN_OPTIONS},
       {title: "おまかせ", field: "isRandomSong", width: 68, ...BOOLEAN_OPTIONS},
-      {title: "MV", field: "isMVRoom", width: 48, ...BOOLEAN_OPTIONS},
-      {title: "火消し", field: "isEnergyUseAllowed", width: 56, ...BOOLEAN_OPTIONS},
+      {title: "3DMV", field: "isMVRoom", width: 56, ...BOOLEAN_OPTIONS},
+      {title: "火消し", field: "allowPlayForStaminaEmpty", width: 56, ...BOOLEAN_OPTIONS},
+      {title: "いじぺち", field: "allowEasyModeWithAFK", width: 68, ...BOOLEAN_OPTIONS},
       {title: "回", field: "maxPlay", width: 48, sorter: "string",},
       {title: "@", field: "playersNeeded", width: 48, sorter: "string",},
       {title: "主", field: "hostStat", sorter: "string", hozAlign: "left"},
       {title: "募", field: "guestStat", sorter: "string", hozAlign: "left"},
-      // {title: "Type", headerPopup: "Room type", field: "roomType", sorter: "string",},
-      // {title: "User", headerPopup: "Host name", field: "hostName", sorter: "string",},
       // {title: "主", headerPopup: "Host name, 主", field: "hostName", sorter: "string",},
       // {title: "主星", headerPopup: "Host rank, 主星", field: "hostRank", sorter: "string",},
       // {title: "主%", headerPopup: "Host power, 主リーダースキル倍率", field: "hostPower", sorter: "string",},
       // {title: "募星", headerPopup: "Guest rank required, 募集星", field: "guestRank", sorter: "string",},
       // {title: "募%", headerPopup: "Guest power required, 募集リーダースキル倍率", field: "guestPower", sorter: "string",},
-      // {title: "SF", headerPopup: "Allow super ferver, SF", field: "AllowSuperFever", ...BOOLEAN_OPTIONS},
-      // {title: "いじぺち", headerPopup: "Allow easy mode, いじぺち", field: "AllowEasyMode", ...BOOLEAN_OPTIONS},
-      // {title: "選曲", headerPopup: "Allow select song, 選曲", field: "AllowSelectSong", ...BOOLEAN_OPTIONS},
-      // {title: "火消し", headerPopup: "Allow play for use energy, 火消し", field: "AllowUseEnergy", ...BOOLEAN_OPTIONS},
+      // {title: "SF", headerPopup: "Allow super ferver, SF", field: "allowSuperFever", ...BOOLEAN_OPTIONS},
+      // {title: "選曲", headerPopup: "Allow select song, 選曲", field: "allowSelectSong", ...BOOLEAN_OPTIONS},
     ]
   });
 
@@ -129,7 +125,7 @@ function createTable() {
       element.style.backgroundColor = "#fcffcf";
       setTimeout(function() {
         element.style.backgroundColor = tmp;
-      }, 256);
+      }, 1024);
     }
   });
 
@@ -138,18 +134,16 @@ function createTable() {
 
 function parsePostContent(str) {
 
-  function getHeader(str) {
-    const re = /\n(募|求)[^\n]+\n/g;
-    return !re.test(str) ? str : str.substring(0, re.lastIndex);
-  } 
+  // function getHeader(str) {
+  //   const re = /\n(募|求)[^\n]+\n/g;
+  //   return !re.test(str) ? str : str.substring(0, re.lastIndex);
+  // } 
 
   // normalize
   str = util.toHalfWidth(str)
     .toLowerCase()
-    // .getHeader(str)
     .replace(/[･・┆┊︎꒰꒱|_\-=[\]()*&\$<>{}\:\^!?]/g, "")
     .replace(/[🙅🙅‍♂️🙅‍♀️⛔🚫✕]/g, "❌")
-    
     .replace(/[^\S\r\n]+/g, " ")
     .replace(/\r\n/g, "\n")
     .replace(/\n+/g, "\n");
@@ -157,10 +151,11 @@ function parsePostContent(str) {
   const roomId = /[^@0-9]([0-9][0-9][0-9][0-9][0-9])[^回0-9]/.exec(str)?.[1];
   const isVeteranRoom = /ベテラン/.test(str);
   const isEnvyRoom = /(🦐|エビ|エンヴィー)/.test(str) && !/(🦐|エビ|エンヴィー)[^\n]{0,2}(不|x|no|❌)/.test(str);
-  const isEnergyUseAllowed = /(火消し)/.test(str) && !/(火消し)[^\n]{0,2}(不|x|no|❌)/.test(str);
   const isMVRoom = /(3dmv|mv)/.test(str) && !/(3dmv|mv)[^\n]{0,2}(不|x|no|❌)/.test(str);
   const isSelectSong = /(選曲)/.test(str) && !/(選曲)[^\n]{0,2}(不|x|no|❌)/.test(str);
   const isRandomSong = /(おまかせ)/.test(str) && !/(おまかせ)[^\n]{0,2}(不|x|no|❌)/.test(str);
+  const allowPlayForStaminaEmpty = /(火消し)/.test(str) && !/(火消し)[^\n]{0,2}(不|x|no|❌)/.test(str);
+  const allowEasyModeWithAFK = /(いじぺち)/.test(str) && !/(いじぺち)[^\n]{0,2}(不|x|no|❌)/.test(str);
   const maxPlay = /([0-9]+)[^\S\r\n]*回/.exec(str)?.[1];
   const playersNeeded = /@[^\S\r\n]*([0-9])+/.exec(str)?.[1];
   const hostStat = /\n.?(?:主)([^\n]+)\n/.exec(str)?.[1]?.trim();
@@ -170,10 +165,11 @@ function parsePostContent(str) {
     roomId,
     isVeteranRoom,
     isEnvyRoom,
-    isEnergyUseAllowed,
     isMVRoom,
     isSelectSong,
     isRandomSong,
+    allowPlayForStaminaEmpty,
+    allowEasyModeWithAFK,
     maxPlay,
     playersNeeded,
     hostStat,
@@ -187,7 +183,8 @@ function getWriteModalValues() {
   const isRandomRoom = document.getElementById("write-room-type-2").checked;
   const isEnvyRoom = document.getElementById("write-room-type-3").checked;
   const isMVRoom = document.getElementById("write-room-type-4").checked;
-  const isEnergyUseAllowed = document.getElementById("write-room-type-5").checked;
+  const allowPlayForStaminaEmpty = document.getElementById("write-room-type-5").checked;
+  const allowEasyModeWithAFK = document.getElementById("write-room-type-6").checked;
   const maxPlay = document.querySelector("input[name='write-max-play']:checked").value;
   const playersNeeded = document.querySelector("input[name='write-players-needed']:checked").value;
   const hostRank = document.querySelector("input[name='write-host-rank']:checked").value;
@@ -202,7 +199,8 @@ function getWriteModalValues() {
     isRandomRoom,
     isEnvyRoom,
     isMVRoom,
-    isEnergyUseAllowed,
+    allowPlayForStaminaEmpty,
+    allowEasyModeWithAFK,
     maxPlay,
     playersNeeded,
     hostRank,
@@ -219,7 +217,8 @@ function clearWriteModalValues() {
   document.getElementById("write-room-type-2").checked = false; // isRandomRoom
   document.getElementById("write-room-type-3").checked = false; // isEnvyRoom
   document.getElementById("write-room-type-4").checked = false; // isMVRoom
-  document.getElementById("write-room-type-5").checked = true; // isEnergyUseAllowed
+  document.getElementById("write-room-type-5").checked = true; // allowPlayForStaminaEmpty
+  document.getElementById("write-room-type-6").checked = false; // allowEasyModeWithAFK
   document.querySelectorAll("input[name='write-max-play']").forEach(e => e.checked = false);
   document.querySelectorAll("input[name='write-players-needed']").forEach(e => e.checked = false);
   document.querySelectorAll("input[name='write-host-rank']").forEach(e => e.checked = false);
@@ -228,7 +227,6 @@ function clearWriteModalValues() {
   document.querySelectorAll("input[name='write-players-needed']")[3].checked = true; // playersNeeded
   document.querySelectorAll("input[name='write-host-rank']")[4].checked = true; // hostRank
   document.querySelectorAll("input[name='write-guest-rank']")[0].checked = true; // guestRank
-
   document.getElementById("write-stamp-type-1").checked = true;
   document.getElementById("write-stamp-type-2").checked = true;
   document.getElementById("write-stamp-type-3").checked = true;
@@ -251,7 +249,8 @@ function createPostContent() {
     isRandomRoom,
     isEnvyRoom,
     isMVRoom,
-    isEnergyUseAllowed,
+    allowPlayForStaminaEmpty,
+    allowEasyModeWithAFK,
     maxPlay,
     playersNeeded,
     hostRank,
@@ -271,8 +270,11 @@ function createPostContent() {
   if (isRandomRoom) {
     text += "おまかせ ";
   }
-  if (isEnergyUseAllowed) {
+  if (allowPlayForStaminaEmpty) {
     text += "火消し ";
+  }
+  if (allowEasyModeWithAFK) {
+    text += "いじぺち ";
   }
   text += maxPlay + "\n\n";
   text += `🔑 ${roomId} ${playersNeeded}\n`
@@ -315,7 +317,8 @@ function renderRoomModal() {
     isRandomRoom,
     isEnvyRoom,
     isMVRoom,
-    isEnergyUseAllowed,
+    allowPlayForStaminaEmpty,
+    allowEasyModeWithAFK,
     maxPlay,
     playersNeeded,
     hostRank,
@@ -350,8 +353,11 @@ function renderRoomModal() {
   if (isRandomRoom) {
     opt += `<span class="badge text-bg-primary">おまかせ</span>\n`;
   }
-  if (isEnergyUseAllowed) {
+  if (allowPlayForStaminaEmpty) {
     opt += `<span class="badge text-bg-primary">火消し</span>\n`;
+  }
+  if (allowEasyModeWithAFK) {
+    opt += `<span class="badge text-bg-primary">いじぺち</span>\n`;
   }
 
   // stats

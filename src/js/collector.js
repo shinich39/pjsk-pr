@@ -3,52 +3,57 @@ const {
   ipcRenderer,
 } = require('electron');
 
+const LOADING_TIME = 2000;
 const MIN_INIT_TIME = 3000;
 const MAX_INIT_TIME = 6000;
 const MIN_REFRESH_TIME = 4000;
-const MAX_REFRESH_TIME = 8000;
+const MAX_REFRESH_TIME = 12000;
 
-let scrollHeight = 0,
-    inProgress = false,
+let inProgress = false,
     toggle = false, 
     count = 0,
-    COUNT_RELOAD = 20;
+    COUNT_RELOAD = 39;
 
 window.addEventListener('DOMContentLoaded', async function() {
   // init
   inProgress = true;
   
-  while(count < 5) {
-    await wait(Math.floor(random(MIN_INIT_TIME, MAX_INIT_TIME)));
+  await wait(Math.floor(random(MIN_INIT_TIME, MAX_INIT_TIME)));
 
+  while(count < 4) {
     if (inProgress) {
-      await sendPosts();
       down(Math.floor(random(1024, 2048)));
+      await wait(LOADING_TIME);
+      await sendPosts();
       count++;
     }
+    await wait(Math.floor(random(MIN_INIT_TIME, MAX_INIT_TIME)));
   }
+
+  down(Math.floor(random(1024, 2048)));
+  await wait(LOADING_TIME);
+  await sendPosts();
 
   toggle = false;
   count = 0;
   while(true) {
-    await wait(Math.floor(random(MIN_REFRESH_TIME, MAX_REFRESH_TIME)));
-
     if (inProgress) {
       if (count < 4) {
-        await sendPosts();
-
         if (toggle) {
           scrollToBottom();
         } else {
           scrollToTop();
         }
+
+        await wait(LOADING_TIME);
+        await sendPosts();
       } else {
         if (toggle) {
-          await sendPosts();
-
           down(Math.floor(random(1024, 2048)));
         } else {
           scrollToTop();
+          await wait(LOADING_TIME);
+          await sendPosts();
         }
       }
 
@@ -59,6 +64,7 @@ window.addEventListener('DOMContentLoaded', async function() {
         location.reload();
       }
     }
+    await wait(Math.floor(random(MIN_REFRESH_TIME, MAX_REFRESH_TIME)));
   }
 });
 
@@ -173,10 +179,6 @@ async function getPosts() {
   const posts = document.querySelectorAll("article[role='article']");
   const result = [];
   for (const post of posts) {
-    const rect = post.getBoundingClientRect();
-    if (scrollHeight < rect.bottom) {
-      scrollHeight = rect.bottom;
-    }
     const postId = getPostId(post);
     const { userId, username } = getUser(post);
     const content = getContentText(post);

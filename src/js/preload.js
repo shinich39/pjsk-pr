@@ -4,7 +4,42 @@ const {
 } = require('electron');
 
 window.addEventListener('DOMContentLoaded', function() {
-  // DOM loaded...
+
+  ;(function() {
+    function getMsg(channel, listener) {
+      ipcRenderer.on(channel, function(event, err, req) {
+        return listener(err, req, event);
+      });
+    }
+    function sendMsg(channel, req) {
+      ipcRenderer.send(channel, null, req);
+    }
+    function getCurrentURL() {
+      return window.location.href;
+    }
+    function getCurrentCookies() {
+      return document.cookie.split(';').map(function(item) {
+        return {
+          key: item.split("=")[0].trim(),
+          value: item.split("=")[1].trim(),
+        }
+      });
+    }
+    function isLoggedIn() {
+      const url = getCurrentURL();
+      if (url.indexOf("https://x.com/?logout") === 0 || url.indexOf("https://x.com/i/flow/login") === 0) {
+        return false;
+      } else {
+        return url.indexOf("https://x.com/home") === 0 || url.indexOf("https://x.com/hashtag/") === 0;
+      }
+    }
+
+    getMsg("chk-login", function(err, req) {
+      console.log("Check login...");
+      sendMsg("login", isLoggedIn());
+    });
+
+  })();
 });
 
 // window.electron 
@@ -16,31 +51,38 @@ contextBridge.exposeInMainWorld('electron', {
       electron: process.versions.electron,
     }
   },
+  /**
+   * 
+   * @param {string} channel 
+   * @param {any} req 
+   */
   sendMsg: function(channel, req) {
     ipcRenderer.send(channel, null, req);
   },
+  /**
+   * 
+   * @param {string} channel 
+   * @param {error} err 
+   */
   sendErr: function(channel, err) {
     ipcRenderer.send(channel, err);
   },
+  /**
+   * 
+   * @param {string} channel 
+   * @param {function} listener 
+   */
   getMsg: function(channel, listener) {
     ipcRenderer.on(channel, function(event, err, req) {
       return listener(err, req, event);
     });
   },
-  // callback
-  // waitMsg: function(channel, req, listener) {
-  //   ipcRenderer.invoke(channel, req)
-  //     .then(function(res) {
-  //       if (typeof res === "object" && res.stack && res.message) {
-  //         return listener(res, null);
-  //       } else {
-  //         return listener(null, res);
-  //       }
-  //     })
-  //     .catch(function(err) {
-  //       return listener(err, null);
-  //     })
-  // },
+  /**
+   * 
+   * @param {string} channel 
+   * @param {any} req 
+   * @returns {Promise<any>}
+   */
   waitMsg: function(channel, req) {
     return new Promise(function(resolve, reject) {
       ipcRenderer.invoke(channel, req)

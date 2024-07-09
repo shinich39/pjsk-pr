@@ -35,9 +35,9 @@ Search for Project SEKAI public room from twitter.
 | ベテラン | Veteran Room | 
 | 曲 | Play only "選曲", "おまかせ", "独りんぼエンヴィー", "ロストエンファウンド", "sage" | 
 | 3DMV | Play 3DMV mode (Do not set default clothes) | 
-| 火消し | Allow play for stamina empty (default value:⭕) | 
-| いじぺち | Allow AFK after get S rank | 
-| 回 | Maximum count of play | 
+| 火消し | Allow play for stamina empty (default value: true) | 
+| いじぺち | AFK allowed after get S rank | 
+| 回 | Number of games remaining | 
 | @ | Required number of players | 
 | 主 | Host stat | 
 | 募 | Guest stat | 
@@ -49,7 +49,7 @@ Search for Project SEKAI public room from twitter.
 3. Wait for loading or create a new room.
 4. Play game and update room.
 
-## updates
+## Updates
 
 - Add ロスエン field.
 - Fix img element parsing.
@@ -57,3 +57,4 @@ Search for Project SEKAI public room from twitter.
 - Add 曲 field.
 - Remove 🦐, ロスエン, おまかせ fields.
 - Fix stamp option.
+- Changed collect algorithm

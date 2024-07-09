@@ -11,7 +11,8 @@ const roomModal = new bootstrap.Modal('#room-modal', { keyboard: false });
 window.DateTime = luxon.DateTime;
 const ROW_BACKGROUND_COLORSET= ["#bcbcbc", "#ffabab", "#ffbcbc", "#ffcdcd", "#ffdfdf"];
 const EXPIRE_TIME = 1000 * 60 * 60; // a hour
-const EXPIRE_DELAY = 1000 * 10; // 10 sec
+const EXPIRE_DELAY = 1000 * 60; // a min
+const INITIAL_SORT = [{column: "date", dir: "desc"}];
 const BOOLEAN_OPTIONS = {
   sorter: "boolean",
   formatter: "tickCross",
@@ -90,9 +91,7 @@ function createTable() {
       headerHozAlign: "center",
       hozAlign: "center",
     },
-    initialSort:[
-      {column: "date", dir: "desc"},
-    ],
+    initialSort: INITIAL_SORT,
     ...ROW_FORMATTER,
     ...ROW_CLICK_POPUP,
     columns: [
@@ -141,40 +140,56 @@ function parsePostContent(str) {
   // normalize
   str = util.toHalfWidth(str)
     .toLowerCase()
-    .replace(/[･・￤‗╎┆┊︎꒰꒱▹|_\-=[\]()*&\$<>⇒{}\:\^!?]/g, "")
-    .replace(/🙆‍♀️|◎|⭕|歓迎/g, "⭕")
-    .replace(/🙅|🙅‍♂️|🙅‍♀️|⛔|🚫|✕|🆖|❌/g, "❌")
-    .replace(/⤴|↑/g, "⤴")
-    .replace(/🦐|エビ|エンヴィー/g, "🦐")
-    .replace(/[^\S\r\n]+/g, " ")
+    .trim()
+    // to single linebreak
     .replace(/\r\n/g, "\n")
-    .replace(/\n+/g, "\n");
+    .replace(/\n+/g, "\n")
+    // remove all whitespace
+    .replace(/([0-9])[^\S\r\n]+([0-9])/g, (s, s1, s2) => `${s1}|${s2}`)
+    .replace(/[^\S\r\n]+/g, "") 
+    // remove special characters
+    .replace(/[･・￤…‗╎┆┊︎▹|_\-=*&\$⇒\:\^!?▷▶︎→✧]/g, " ")
+    .replace(/[()[\]꒰꒱<>]/g, " ")
+    .replace(/[^\S\r\n]+/g, " ") 
+    .replace(/不可|不|以外|🙅|🙅‍♂️|🙅‍♀️|⛔|🚫|⛔|✕|✖|✖️|❎|🆖|❌/g, "❌")
+    .replace(/([^A-Za-z])(?:x|no)([^A-Za-z])/g, (s, c1, c2) => `${c1}❌${c2}`)
+    .replace(/可|🙆‍♀️|👌|◎|◎|○|⭕|✔|✅|歓迎/g, "⭕")
+    .replace(/星|⭑|✦|⭐︎|☆|✰|⚝|⋆|✶|🌟|ִ ࣪𖤐|★|✮|ᯓ★|⭐/g, "⭐")
+    .replace(/⤴|↑|⬆|🔼|⏫|▲|🆙|⬆️/g, "⬆️")
+    .replace(/([0-9]+)(上|アップ)/g, (e, e1) => `${e1}⬆️`)
+    .replace(/🦐|エビ|エンヴィー|独りんぼエンヴィー/g, "🦐") // 独りんぼエンヴィー
+    .replace(/ロストエ|ロストエンファウンド/g, "ロストエ") // ロストエンファウンド
+    .replace(/(?:あと|あっと|@)(?:ひとり|1人|1|いち)([^回])/g, (s, s1) => `@1${s1}`)
+    .replace(/(?:あと|あっと|@)(?:ふたり|2人|2)([^回])/g, (s, s1) => `@2${s1}`)
+    .replace(/(?:あと|あっと|@)(?:3人|3)([^回])/g, (s, s1) => `@3${s1}`)
+    .replace(/(?:あと|あっと|@)(?:4人|4)([^回])/g, (s, s1) => `@4${s1}`)
+    .replace(/(\n[^\n]{0,1}主[^\n]+)((?:募集|募|求)[^\n]+\n)/g, (a0, a1, a2) => `${a1}\n${a2}`);
 
   const roomId = /[^@0-9]([0-9][0-9][0-9][0-9][0-9])[^回0-9]/.exec(str)?.[1];
   const isVeteranRoom = /ベテラン/.test(str);
-  const isMVRoom = /(3dmv|mv)/.test(str) && !/(3dmv|mv)[^\n]{0,2}(不|x|no|❌)/.test(str);
+  const isMVRoom = /(3dmv|mv)[^\n]{0,1}[^❌]/.test(str);
 
   let limitMusic = null;
   if (!isMVRoom) {
-    if (/選曲[^\n不]{0,2}(可|o|⭕)/.test(str) && !/選曲[^\n]{0,2}(不|x|no|❌)/.test(str)) {
-      limitMusic = "選曲";
-    } else if (/(おまかせ)/.test(str) && !/(おまかせ)[^\n]{0,2}(不|x|no|❌)/.test(str)) {
+    if (/おまかせ[^\n]{0,1}[^❌]/.test(str)) {
       limitMusic = "おまかせ";
-    } else if (/🦐/.test(str) && !/🦐[^\n]{0,2}(以外|不|x|no|❌)/.test(str)) {
+    } else if (/🦐[^\n]{0,1}[^❌]/.test(str)) {
       limitMusic = "🦐";
-    } else if (/ロスエン/.test(str) && !/ロスエン[^\n]{0,2}(以外|不|x|no|❌)/.test(str)) {
+    } else if (/ロスエン[^\n]{0,1}[^❌]/.test(str)) {
       limitMusic = "ロスエン";
-    } else if (/sage/.test(str) && !/sage[^\n]{0,2}(以外|不|x|no|❌)/.test(str)) {
+    } else if (/sage[^\n]{0,1}[^❌]/.test(str)) {
       limitMusic = "sage";
+    } else if (/選曲[^\n]{0,1}[^❌]/.test(str)) {
+      limitMusic = "選曲";
     }
   }
 
-  const allowPlayForStaminaEmpty = !/火消し[^\n]{0,2}(不|x|no|❌)/.test(str);
-  const allowEasyModeWithAFK = /いじぺち/.test(str) && !/いじぺち[^\n]{0,2}(不|x|no|❌)/.test(str);
-  const maxPlay = /([0-9]+)[^\S\r\n]*回/.exec(str)?.[1];
-  const playersNeeded = /@[^\S\r\n]*([0-9])+/.exec(str)?.[1];
-  const hostStat = /\n.?(?:主)([^\n]+)\n/.exec(str)?.[1]?.trim();
-  const guestStat = /\n.?(?:募|求)([^\n]+)\n/.exec(str)?.[1].trim();
+  const allowPlayForStaminaEmpty = !/火消し[^\n]{0,1}❌/.test(str);
+  const allowEasyModeWithAFK = /いじぺち[^\n]{0,1}[^❌]/.test(str);
+  const maxPlay = /(周)回/.exec(str)?.[1] || /[^もう]([0-9]+)回/.exec(str)?.[1];
+  const playersNeeded = /@[^\n]{0,1}([0-9])+/.exec(str)?.[1];
+  const hostStat = /\n[^\n]{0,1}(?:主)([^\n]+)\n/.exec(str)?.[1]?.replace(/%/g, "% ")?.trim();
+  const guestStat = /\n[^\n]{0,1}(?:募集|募|求)([^\n]+)\n/.exec(str)?.[1]?.replace(/%/g, "% ")?.trim();
   
   return {
     roomId,
@@ -504,8 +519,6 @@ getMsg("collect", function(err, req, event) {
     return Object.assign(post, parsePostContent(post.content));
   });
 
-  // console.log("New Posts:", newPosts);
-
   // remove dupe in new posts
   newPosts = newPosts.reduce(function(prev, curr) {
     if (!curr.roomId) {
@@ -544,9 +557,16 @@ getMsg("collect", function(err, req, event) {
     return false;
   });
 
-  // console.log("New Posts:", newPosts);
 
-  __table__.updateOrAddData(newPosts);
+  if (newPosts.length > 0) {
+    console.log("New Posts:", newPosts);
+
+    __table__.updateOrAddData(newPosts)
+      .then(function() {
+        // refresh sort
+        __table__.setSort(INITIAL_SORT);
+      })
+  }
 });
 
 // get write response

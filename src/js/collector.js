@@ -3,69 +3,97 @@ const {
   ipcRenderer,
 } = require('electron');
 
-const LOADING_TIME = 2000;
-const MIN_INIT_TIME = 3000;
-const MAX_INIT_TIME = 6000;
-const MIN_REFRESH_TIME = 4000;
-const MAX_REFRESH_TIME = 12000;
-const REFRESH_TIME = 1000 * 60 * 2; // 2 min
+const LOADING_TIME = 1000 * 2;
+const MIN_REFRESH_TIME = 1000 * 5;
+const MAX_REFRESH_TIME = 1000 * 20;
+const MIN_RESTING_TIME = 1000 * 60 * 2; // 2 min
+const MAX_RESTING_TIME = 1000 * 60 * 4; // 4 min
+const RESTING_UNIT = 1000 * 60; // 1 min
+const EXPIRE_TIME = 1000 * 60 * 60; // a hour
 
-let inProgress = false,
-    toggle = false, 
-    count = 0,
-    COUNT_RELOAD = 10;
+let body,
+    inProgress = true,
+    isExpiredOldPost = false, 
+    isScrollUp = false,
+    countNotChanged = 0,
+    newestPost = null,
+    oldestPost = null,
+    isUpdatedNewPost = false,
+    isUpdatedOldPost = false;
 
 window.addEventListener('DOMContentLoaded', async function() {
-  // init
-  inProgress = true;
-  
-  await wait(Math.floor(random(MIN_INIT_TIME, MAX_INIT_TIME)));
+  console.log("Collector loaded.");
 
-  while(count < 4) {
-    if (inProgress) {
-      down(Math.floor(random(1024, 2048)));
-      await wait(LOADING_TIME);
-      await sendPosts();
-      count++;
-    }
-    await wait(Math.floor(random(MIN_INIT_TIME, MAX_INIT_TIME)));
+  // set scroll target
+  body = document.querySelector('main[role="main"]');
+  if (!body) {
+    body = window;
   }
 
-  down(Math.floor(random(1024, 2048)));
   await wait(LOADING_TIME);
-  await sendPosts();
 
-  toggle = false;
-  count = 0;
   while(true) {
+    // reset
+    isUpdatedNewPost = false;
+    isUpdatedOldPost = false;
+
     if (inProgress) {
-      if (count < 4) {
-        if (toggle) {
+
+      // scroll
+      if (!isScrollUp) {
+        if (isExpiredOldPost) {
+          scrollDown(Math.floor(random(1024, 2048)));
+        } else {
           scrollToBottom();
-        } else {
-          scrollToTop();
         }
-
-        await wait(LOADING_TIME);
-        await sendPosts();
+        // console.log("Scroll down.");
       } else {
-        if (toggle) {
-          down(Math.floor(random(1024, 2048)));
+        scrollToTop();
+        // console.log("Scroll up.");
+      }
+
+      // send posts
+      await wait(LOADING_TIME);
+      const posts = await getPosts();
+      sendMsg("collect", posts);
+      console.log(`Sent ${posts.length} posts.`);
+
+      // logging
+      if (isScrollUp) {
+        if (isUpdatedNewPost) {
+          console.log("New posts has been updated.");
         } else {
-          scrollToTop();
-          await wait(LOADING_TIME);
-          await sendPosts();
+          console.log(`New posts not updated.`);
+        }
+      } else {
+        if (isUpdatedOldPost) {
+          console.log("Old posts has been updated.");
+        } else {
+          if (!isExpiredOldPost) {
+            console.log(`Old posts not updated.`);
+          } else {
+            console.log("No more update old post.");
+          }
         }
       }
 
-      toggle = !toggle;
-      count++;
-      
-      if (count % COUNT_RELOAD === 0) {
-        await wait(REFRESH_TIME);
-      }
+      isScrollUp = !isScrollUp;
+    } else {
+      console.log("Not in progess.");
     }
-    await wait(Math.floor(random(MIN_REFRESH_TIME, MAX_REFRESH_TIME)));
+
+    console.log(`Count left ${countNotChanged} until resting time.`);
+
+    if (!isUpdatedNewPost && !isUpdatedOldPost && countNotChanged > 2) {
+      countNotChanged = 0;
+      const t = Math.floor(random(MIN_RESTING_TIME, MAX_RESTING_TIME));
+      console.log(`Getting resting time. ${t} ms`);
+      await wait(t);
+    } else {
+      const t = Math.floor(random(MIN_REFRESH_TIME, MAX_REFRESH_TIME));
+      console.log(`Getting refresh time. ${t} ms`);
+      await wait(t);
+    }
   }
 });
 
@@ -100,29 +128,29 @@ function getCurrentPosition() {
   return document.documentElement.scrollTop || document.body.scrollTop;
 }
 
-function up(n) {
-  window.scrollTo({
+function scrollUp(n) {
+  body.scrollTo({
     top: getCurrentPosition() - n,
     behavior: 'smooth',
   });
 }
 
-function down(n) {
-  window.scrollTo({
+function scrollDown(n) {
+  body.scrollTo({
     top: getCurrentPosition() + n,
     behavior: 'smooth',
   });
 }
 
 function scrollToTop() {
-  window.scrollTo({
+  body.scrollTo({
     top: 0,
     behavior: 'smooth',
   });
 }
 
 function scrollToBottom() {
-  window.scrollTo({
+  body.scrollTo({
     top: document.body.scrollHeight,
     behavior: 'smooth',
   });
@@ -132,12 +160,6 @@ function wait(delay) {
   return new Promise(function(resolve) {
     return setTimeout(resolve, delay);
   });
-}
-
-async function sendPosts() {
-  const posts = await getPosts();
-  sendMsg("collect", posts);
-  console.log(`Sent ${posts.length} posts`);
 }
 
 async function getPosts() {
@@ -199,7 +221,39 @@ async function getPosts() {
     const html = getContentHTML(post);
     const date = getDate(post);
     if (postId && userId.indexOf("@") === 0 && date) {
-      result.push({ postId, userId, username, content, html, date });
+      const newPost = { postId, userId, username, content, html, date };
+      
+      if (!newestPost || new Date(newestPost.date).valueOf() < new Date(newPost.date).valueOf()) {
+        newestPost = newPost;
+        isUpdatedNewPost = true;
+      }
+
+      if (!isExpiredOldPost) {
+        if (!oldestPost || new Date(oldestPost.date).valueOf() > new Date(newPost.date).valueOf()) {
+          oldestPost = newPost;
+          isUpdatedOldPost = true;
+          if (new Date(newPost.date).valueOf() + EXPIRE_TIME < new Date().valueOf()) {
+            isExpiredOldPost = true;
+          }
+        }
+      }
+
+      // add a new post
+      result.push(newPost);
+    }
+  }
+
+  if (isScrollUp) {
+    if (isUpdatedNewPost) {
+      countNotChanged = 0;
+    } else {
+      countNotChanged += 1;
+    }
+  } else if (!isScrollUp && !isExpiredOldPost) {
+    if (isUpdatedOldPost) {
+      countNotChanged = 0;
+    } else {
+      countNotChanged += 1;
     }
   }
 

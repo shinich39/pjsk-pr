@@ -18,7 +18,7 @@
     "appId": "com.shinich39.pjskpr",
     "artifactName": "${productName}-${version}.${ext}",
     "copyright": "Copyright © year ${author}",
-    "asar": false,
+    "asar": true,
     "removePackageScripts": true,
     "protocols": {
       "name": "pjsk pr",
@@ -50,7 +50,7 @@
         "nsis",
         "portable"
       ],
-      "icon": "./src/icons/256x256.ico"
+      "icon": "./src/icons/512x512.png"
     },
     "nsis": {
       "oneClick": false,

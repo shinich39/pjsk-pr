@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>pjsk pr</title>
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'">
+  <link rel="stylesheet" type="text/css" href="../../node_modules/bootstrap/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="../tabulator/css/tabulator.min.css">
+  <link rel="stylesheet" type="text/css" href="../css/style.css">
+</head>
+<body>
+  <!-- Header -->
+  <div class="container-fluid" style="background-color: #999; border-bottom: 1px solid #999;">
+    <div class="d-flex justify-content-between align-items-center py-2">
+      <a 
+        id="open-git" 
+        href="javascript:void(0)" 
+        style="color: #000; text-decoration: none;">
+        pjsk pr
+      </a>
+  
+      <button 
+        id="write-button" 
+        type="button"
+        class="btn btn-primary btn-sm"
+        data-bs-toggle="modal"
+        data-bs-target="#write-modal">
+          New Room
+      </button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div id="room-table"></div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="write-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        
+        <div class="modal-header w-100 p-3">
+
+          <!-- Room ID -->
+          <div class="input-group">
+            <span class="input-group-text">🔑</span>
+            <input id="write-room-id" type="text" class="form-control" placeholder="00000" maxlength="5">
+          </div>
+    
+        </div>
+
+        <div class="modal-body p-3">
+
+          <p>部屋の設定</p>
+
+          <div class="row mb-3">
+            <div class="col-auto">
+              <!-- Veteran Room -->
+              <div class="form-check form-switch form-check-inline">
+                <input class="form-check-input" id="write-room-type-1" type="checkbox" role="switch" checked>
+                <label class="form-check-label" for="write-room-type-1">ベテラン</label>
+              </div>
+              <!-- Random Room -->
+              <div class="form-check form-switch form-check-inline">
+                <input class="form-check-input" id="write-room-type-2" type="checkbox" role="switch">
+                <label class="form-check-label" for="write-room-type-2">おまかせ</label>
+              </div>
+              <!-- Envy Room -->
+              <div class="form-check form-switch form-check-inline">
+                <input class="form-check-input" id="write-room-type-3" type="checkbox" role="switch">
+                <label class="form-check-label" for="write-room-type-3">🦐</label>
+              </div>
+              <!-- Music Video Room -->
+              <div class="form-check form-switch form-check-inline">
+                <input class="form-check-input" id="write-room-type-4" type="checkbox" role="switch">
+                <label class="form-check-label" for="write-room-type-4">3DMV</label>
+              </div>
+              <!-- Energy Room -->
+              <div class="form-check form-switch form-check-inline">
+                <input class="form-check-input" id="write-room-type-5" type="checkbox" role="switch" checked>
+                <label class="form-check-label" for="write-room-type-5">火消し</label>
+              </div>
+            </div>
+          </div>
+
+          <p>プレー回数</p>
+
+          <div class="row mb-3">
+            <div class="col-auto">
+              <!-- <div class="form-check">
+                <input class="form-check-input" id="write-max-play-1" name="write-max-play" type="radio" value="1回">
+                <label class="form-check-label" for="write-max-play-1">1回</label>
+              </div> -->
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-max-play-2" name="write-max-play" type="radio" value="2回">
+                <label class="form-check-label" for="write-max-play-2">2回</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-max-play-3" name="write-max-play" type="radio" value="3回" checked>
+                <label class="form-check-label" for="write-max-play-3">3回</label>
+              </div>
+              <!-- <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-max-play-4" name="write-max-play" type="radio" value="4回">
+                <label class="form-check-label" for="write-max-play-4">4回</label>
+              </div> -->
+              <!-- <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-max-play-5" name="write-max-play" type="radio" value="5回">
+                <label class="form-check-label" for="write-max-play-5">5回</label>
+              </div> -->
+              <!-- <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-max-play-6" name="write-max-play" type="radio" value="6回">
+                <label class="form-check-label" for="write-max-play-6">6回</label>
+              </div> -->
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-max-play-7" name="write-max-play" type="radio" value="7回">
+                <label class="form-check-label" for="write-max-play-7">7回</label>
+              </div>
+              <!-- <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-max-play-8" name="write-max-play" type="radio" value="8回">
+                <label class="form-check-label" for="write-max-play-8">8回</label>
+              </div> -->
+              <!-- <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-max-play-9" name="write-max-play" type="radio" value="9回">
+                <label class="form-check-label" for="write-max-play-9">9回</label>
+              </div> -->
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-max-play-10" name="write-max-play" type="radio" value="10回">
+                <label class="form-check-label" for="write-max-play-10">10回</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-max-play-11" name="write-max-play" type="radio" value="周回">
+                <label class="form-check-label" for="write-max-play-11">周回</label>
+              </div>
+            </div>
+          </div>
+
+          <p>募集している人数</p>
+
+          <div class="row mb-3">
+            <div class="col-auto">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-players-needed-1" name="write-players-needed" type="radio" value="@1">
+                <label class="form-check-label" for="write-players-needed-1">＠1</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-players-needed-2" name="write-players-needed" type="radio" value="@2">
+                <label class="form-check-label" for="write-players-needed-2">＠2</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-players-needed-3" name="write-players-needed" type="radio" value="@3">
+                <label class="form-check-label" for="write-players-needed-3">＠3</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-players-needed-4" name="write-players-needed" type="radio" value="@4" checked>
+                <label class="form-check-label" for="write-players-needed-4">＠4</label>
+              </div>
+            </div>
+          </div>
+
+          <p>主</p>
+          
+          <div class="row mb-3">
+            <div class="col-auto">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-host-rank-0" name="write-host-rank" type="radio" value="優しい">
+                <label class="form-check-label" for="write-host-rank-0">優しい</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-host-rank-1" name="write-host-rank" type="radio" value="☆1">
+                <label class="form-check-label" for="write-host-rank-1">☆1</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-host-rank-2" name="write-host-rank" type="radio" value="☆2">
+                <label class="form-check-label" for="write-host-rank-2">☆2</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-host-rank-3" name="write-host-rank" type="radio" value="☆3">
+                <label class="form-check-label" for="write-host-rank-3">☆3</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-host-rank-4" name="write-host-rank" type="radio" value="☆4" checked>
+                <label class="form-check-label" for="write-host-rank-4">☆4</label>
+              </div>
+              <div class="form-check form-check-inline d-none">
+                <input class="form-check-input" id="write-host-rank-5" name="write-host-rank" type="radio" value="☆5" disabled>
+                <label class="form-check-label" for="write-host-rank-5">☆5</label>
+              </div>
+            </div>
+          </div>
+
+          <p>募</p>
+
+          <div class="row mb-3">
+            <div class="col-auto">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-guest-rank-0" name="write-guest-rank" type="radio" value="誰でも" checked>
+                <label class="form-check-label" for="write-guest-rank-0">誰でも</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-guest-rank-1" name="write-guest-rank" type="radio" value="☆1">
+                <label class="form-check-label" for="write-guest-rank-1">☆1</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-guest-rank-2" name="write-guest-rank" type="radio" value="☆2">
+                <label class="form-check-label" for="write-guest-rank-2">☆2</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-guest-rank-3" name="write-guest-rank" type="radio" value="☆3">
+                <label class="form-check-label" for="write-guest-rank-3">☆3</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-guest-rank-4" name="write-guest-rank" type="radio" value="☆4">
+                <label class="form-check-label" for="write-guest-rank-4">☆4</label>
+              </div>
+              <div class="form-check form-check-inline d-none">
+                <input class="form-check-input" id="write-guest-rank-5" name="write-guest-rank" type="radio" value="☆5" disabled>
+                <label class="form-check-label" for="write-guest-rank-5">☆5</label>
+              </div>
+            </div>
+          </div>
+
+          <p>スタンプ</p>
+
+          <div class="row">
+            <div class="col-auto">
+              <!-- Rejoin -->
+              <div class="form-check form-switch form-check-inline">
+                <input class="form-check-input" id="write-stamp-type-1" type="checkbox" role="switch" checked>
+                <label class="form-check-label" for="write-stamp-type-1">もう一回みのり</label>
+              </div>
+              <!-- Host Disconnect -->
+              <div class="form-check form-switch form-check-inline">
+                <input class="form-check-input" id="write-stamp-type-2" type="checkbox" role="switch" checked>
+                <label class="form-check-label" for="write-stamp-type-2">乙咲希</label>
+              </div>
+              <!-- Guest Disconnect -->
+              <div class="form-check form-switch form-check-inline">
+                <input class="form-check-input" id="write-stamp-type-3" type="checkbox" role="switch" checked>
+                <label class="form-check-label" for="write-stamp-type-3">またね系</label>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+
+        <div class="modal-footer justify-content-between p-2">
+          <button id="write-cancel" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button id="write-submit" type="button" class="btn btn-primary">Create</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Room Modal -->
+  <div class="modal fade" id="room-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header w-100 justify-content-between p-2">
+            <h1 id="room-modal-title" class="modal-title fs-5"></h1>
+            <span id="room-modal-time"></span>
+        </div>
+        <div id="room-modal-body" class="modal-body p-4">
+        </div>
+        <div class="modal-footer justify-content-between p-2">
+          <button id="room-close" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button id="room-update" type="button" class="btn btn-primary">Update</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+
+    <!-- Error Toast -->
+    <div id="error-toast" class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div id="error-toast-body" class="toast-body"></div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+
+    <!-- Message Toast -->
+    <div id="message-toast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div id="message-toast-body" class="toast-body"></div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+
+  </div>
+
+
+  <script src="../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../tabulator/js/tabulator.min.js"></script>
+  <script src="../js/moment.min.js"></script>
+  <script src="../js/luxon.min.js"></script>
+  <script src="../js/util.min.js"></script>
+  <script src="../js/renderer.js"></script>
+</body>
+
+</html>

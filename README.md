@@ -9,12 +9,12 @@ Search for Project SEKAI public room from twitter.
 ## Features
 
 - Search public room.
+- ルームID, 更新時間, 部屋のタイプ(フリーとベテラン), 🦐, おまかせ, MV, 火消し, プレー回数, 募集している人数, 募集条件...
 - Highlight on updated room.
-- ルームID, 更新時間, 部屋のタイプ(フリーとベテラン), 🦐, おまかせ, MV, 火消し, プレー回数, 募集している人数, 募集条件
 - Create a public room with simply settings.
-- 部屋のタイプ, 🦐, おまかせ, MV, 火消し, プレー回数, 募集している人数, 募集条件（星）, スタンプ
+- 部屋のタイプ, 🦐, おまかせ, MV, 火消し, プレー回数, 募集している人数, 募集条件（星）, スタンプ...
 - Update room created with this application.
-- 募集している人数, プレー回数
+- 募集している人数, プレー回数...
 - Show original content when left click row.
 
 <div>

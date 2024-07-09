@@ -54,3 +54,4 @@ Search for Project SEKAI public room from twitter.
 
 - Add ロスエン field.
 - Fix img element parsing.
+- Add resting time to collector.

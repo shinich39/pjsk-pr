@@ -51,44 +51,52 @@
 
         <div class="modal-body p-3">
 
-          <p>部屋の設定</p>
+          <p>設定</p>
 
           <div class="row mb-3">
             <div class="col-auto">
-              <!-- Veteran Room -->
               <div class="form-check form-switch form-check-inline">
                 <input class="form-check-input" id="write-room-type-1" type="checkbox" role="switch" checked>
                 <label class="form-check-label" for="write-room-type-1">ベテラン</label>
               </div>
-              <!-- Random Room -->
               <div class="form-check form-switch form-check-inline">
                 <input class="form-check-input" id="write-room-type-2" type="checkbox" role="switch">
-                <label class="form-check-label" for="write-room-type-2">おまかせ</label>
+                <label class="form-check-label" for="write-room-type-2">3DMV</label>
               </div>
-              <!-- Envy Room -->
               <div class="form-check form-switch form-check-inline">
                 <input class="form-check-input" id="write-room-type-3" type="checkbox" role="switch">
-                <label class="form-check-label" for="write-room-type-3">🦐</label>
+                <label class="form-check-label" for="write-room-type-3">火消し❌</label>
               </div>
-              <!-- Losuen Room -->
               <div class="form-check form-switch form-check-inline">
                 <input class="form-check-input" id="write-room-type-4" type="checkbox" role="switch">
-                <label class="form-check-label" for="write-room-type-4">ロスエン</label>
+                <label class="form-check-label" for="write-room-type-4">いじぺち</label>
               </div>
-              <!-- Music Video Room -->
-              <div class="form-check form-switch form-check-inline">
-                <input class="form-check-input" id="write-room-type-5" type="checkbox" role="switch">
-                <label class="form-check-label" for="write-room-type-5">3DMV</label>
+            </div>
+          </div>
+
+          <p>曲</p>
+
+          <div class="row mb-3">
+            <div class="col-auto">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-limit-music-0" name="write-limit-music" type="radio" value="選曲" checked>
+                <label class="form-check-label" for="write-limit-music-0">選曲</label>
               </div>
-              <!-- Allow play for stamina empty -->
-              <div class="form-check form-switch form-check-inline">
-                <input class="form-check-input" id="write-room-type-6" type="checkbox" role="switch" checked>
-                <label class="form-check-label" for="write-room-type-6">火消し</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-limit-music-1" name="write-limit-music" type="radio" value="おまかせ">
+                <label class="form-check-label" for="write-limit-music-1">おまかせ</label>
               </div>
-              <!-- Allow AFK after get S rank -->
-              <div class="form-check form-switch form-check-inline">
-                <input class="form-check-input" id="write-room-type-7" type="checkbox" role="switch">
-                <label class="form-check-label" for="write-room-type-7">いじぺち</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-limit-music-2" name="write-limit-music" type="radio" value="🦐">
+                <label class="form-check-label" for="write-limit-music-2">🦐</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-limit-music-3" name="write-limit-music" type="radio" value="ロスエン">
+                <label class="form-check-label" for="write-limit-music-3">ロスエン</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="write-limit-music-4" name="write-limit-music" type="radio" value="sage">
+                <label class="form-check-label" for="write-limit-music-4">sage</label>
               </div>
             </div>
           </div>
@@ -267,8 +275,8 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header w-100 justify-content-between p-2">
-            <h1 id="room-modal-title" class="modal-title fs-5"></h1>
-            <span id="room-modal-time"></span>
+          <h1 id="room-modal-title" class="modal-title fs-5"></h1>
+          <span id="room-modal-time"></span>
         </div>
         <div id="room-modal-body" class="modal-body p-4">
         </div>

@@ -99,12 +99,10 @@ function createTable() {
       {title: "🕒", field: "date", width: 64, ...DATE_OPTIONS},
       {title: "🔑", field: "roomId", sorter: "string", width: 64,},
       {title: "ベテラン", field: "isVeteranRoom", width: 68, ...BOOLEAN_OPTIONS},
-      {title: "🦐", field: "isEnvyRoom", width: 48, ...BOOLEAN_OPTIONS},
-      {title: "ロスエン",field: "isLosuenRoom", width: 68, ...BOOLEAN_OPTIONS},
-      {title: "おまかせ", field: "isRandomSong", width: 68, ...BOOLEAN_OPTIONS},
       {title: "3DMV", field: "isMVRoom", width: 56, ...BOOLEAN_OPTIONS},
-      {title: "火消し", field: "allowPlayForStaminaEmpty", width: 56, ...BOOLEAN_OPTIONS},
+      {title: "火消し", field: "allowPlayForStaminaEmpty", width: 68, ...BOOLEAN_OPTIONS},
       {title: "いじぺち", field: "allowEasyModeWithAFK", width: 68, ...BOOLEAN_OPTIONS},
+      {title: "曲", field: "limitMusic", width: 68, sorter: "string",},
       {title: "回", field: "maxPlay", width: 48, sorter: "string",},
       {title: "@", field: "playersNeeded", width: 48, sorter: "string",},
       {title: "主", field: "hostStat", sorter: "string", hozAlign: "left"},
@@ -143,22 +141,36 @@ function parsePostContent(str) {
   // normalize
   str = util.toHalfWidth(str)
     .toLowerCase()
-    .replace(/[･・┆┊︎꒰꒱|_\-=[\]()*&\$<>{}\:\^!?]/g, "")
-    .replace(/🙅|🙅‍♂️|🙅‍♀️|⛔|🚫|✕/g, "❌")
-    .replace(/🦐/g, "エンヴィー")
+    .replace(/[･・￤‗╎┆┊︎꒰꒱▹|_\-=[\]()*&\$<>⇒{}\:\^!?]/g, "")
+    .replace(/🙆‍♀️|◎|⭕|歓迎/g, "⭕")
+    .replace(/🙅|🙅‍♂️|🙅‍♀️|⛔|🚫|✕|🆖|❌/g, "❌")
+    .replace(/⤴|↑/g, "⤴")
+    .replace(/🦐|エビ|エンヴィー/g, "🦐")
     .replace(/[^\S\r\n]+/g, " ")
     .replace(/\r\n/g, "\n")
     .replace(/\n+/g, "\n");
 
   const roomId = /[^@0-9]([0-9][0-9][0-9][0-9][0-9])[^回0-9]/.exec(str)?.[1];
   const isVeteranRoom = /ベテラン/.test(str);
-  const isEnvyRoom = /(エビ|エンヴィー)/.test(str) && !/(エビ|エンヴィー)[^\n]{0,2}(以外|不|x|no|❌)/.test(str);
-  const isLosuenRoom = /(ロスエン)/.test(str) && !/(ロスエン)[^\n]{0,2}(以外|不|x|no|❌)/.test(str); // ロストエンファウンド
   const isMVRoom = /(3dmv|mv)/.test(str) && !/(3dmv|mv)[^\n]{0,2}(不|x|no|❌)/.test(str);
-  const isSelectSong = /(選曲)/.test(str) && !/(選曲)[^\n]{0,2}(不|x|no|❌)/.test(str);
-  const isRandomSong = /(おまかせ)/.test(str) && !/(おまかせ)[^\n]{0,2}(不|x|no|❌)/.test(str);
-  const allowPlayForStaminaEmpty = /(火消し)/.test(str) && !/(火消し)[^\n]{0,2}(不|x|no|❌)/.test(str);
-  const allowEasyModeWithAFK = /(いじぺち)/.test(str) && !/(いじぺち)[^\n]{0,2}(不|x|no|❌)/.test(str);
+
+  let limitMusic = null;
+  if (!isMVRoom) {
+    if (/選曲[^\n不]{0,2}(可|o|⭕)/.test(str) && !/選曲[^\n]{0,2}(不|x|no|❌)/.test(str)) {
+      limitMusic = "選曲";
+    } else if (/(おまかせ)/.test(str) && !/(おまかせ)[^\n]{0,2}(不|x|no|❌)/.test(str)) {
+      limitMusic = "おまかせ";
+    } else if (/🦐/.test(str) && !/🦐[^\n]{0,2}(以外|不|x|no|❌)/.test(str)) {
+      limitMusic = "🦐";
+    } else if (/ロスエン/.test(str) && !/ロスエン[^\n]{0,2}(以外|不|x|no|❌)/.test(str)) {
+      limitMusic = "ロスエン";
+    } else if (/sage/.test(str) && !/sage[^\n]{0,2}(以外|不|x|no|❌)/.test(str)) {
+      limitMusic = "sage";
+    }
+  }
+
+  const allowPlayForStaminaEmpty = !/火消し[^\n]{0,2}(不|x|no|❌)/.test(str);
+  const allowEasyModeWithAFK = /いじぺち/.test(str) && !/いじぺち[^\n]{0,2}(不|x|no|❌)/.test(str);
   const maxPlay = /([0-9]+)[^\S\r\n]*回/.exec(str)?.[1];
   const playersNeeded = /@[^\S\r\n]*([0-9])+/.exec(str)?.[1];
   const hostStat = /\n.?(?:主)([^\n]+)\n/.exec(str)?.[1]?.trim();
@@ -167,13 +179,10 @@ function parsePostContent(str) {
   return {
     roomId,
     isVeteranRoom,
-    isEnvyRoom,
-    isLosuenRoom,
     isMVRoom,
-    isSelectSong,
-    isRandomSong,
     allowPlayForStaminaEmpty,
     allowEasyModeWithAFK,
+    limitMusic,
     maxPlay,
     playersNeeded,
     hostStat,
@@ -184,12 +193,10 @@ function parsePostContent(str) {
 function getWriteModalValues() {
   const roomId = document.getElementById("write-room-id").value;
   const isVeteranRoom = document.getElementById("write-room-type-1").checked;
-  const isRandomRoom = document.getElementById("write-room-type-2").checked;
-  const isEnvyRoom = document.getElementById("write-room-type-3").checked;
-  const isLosuenRoom = document.getElementById("write-room-type-4").checked;
-  const isMVRoom = document.getElementById("write-room-type-5").checked;
-  const allowPlayForStaminaEmpty = document.getElementById("write-room-type-6").checked;
-  const allowEasyModeWithAFK = document.getElementById("write-room-type-7").checked;
+  const isMVRoom = document.getElementById("write-room-type-2").checked;
+  const allowPlayForStaminaEmpty = document.getElementById("write-room-type-3").checked;
+  const allowEasyModeWithAFK = document.getElementById("write-room-type-4").checked;
+  const limitMusic = document.querySelector("input[name='write-limit-music']:checked").value;
   const maxPlay = document.querySelector("input[name='write-max-play']:checked").value;
   const playersNeeded = document.querySelector("input[name='write-players-needed']:checked").value;
   const hostRank = document.querySelector("input[name='write-host-rank']:checked").value;
@@ -201,12 +208,10 @@ function getWriteModalValues() {
   return {
     roomId,
     isVeteranRoom,
-    isRandomRoom,
-    isEnvyRoom,
-    isLosuenRoom,
     isMVRoom,
     allowPlayForStaminaEmpty,
     allowEasyModeWithAFK,
+    limitMusic,
     maxPlay,
     playersNeeded,
     hostRank,
@@ -215,28 +220,6 @@ function getWriteModalValues() {
     stamp2,
     stamp3,
   }
-}
-
-function clearWriteModalValues() {
-  document.getElementById("write-room-id").value = ""; // roomId
-  document.getElementById("write-room-type-1").checked = true; // isVeteranRoom
-  document.getElementById("write-room-type-2").checked = false; // isRandomRoom
-  document.getElementById("write-room-type-3").checked = false; // isEnvyRoom
-  document.getElementById("write-room-type-4").checked = false; // isLosuenRoom
-  document.getElementById("write-room-type-5").checked = false; // isMVRoom
-  document.getElementById("write-room-type-6").checked = true; // allowPlayForStaminaEmpty
-  document.getElementById("write-room-type-7").checked = false; // allowEasyModeWithAFK
-  document.querySelectorAll("input[name='write-max-play']").forEach(e => e.checked = false);
-  document.querySelectorAll("input[name='write-players-needed']").forEach(e => e.checked = false);
-  document.querySelectorAll("input[name='write-host-rank']").forEach(e => e.checked = false);
-  document.querySelectorAll("input[name='write-guest-rank']").forEach(e => e.checked = false);
-  document.querySelectorAll("input[name='write-max-play']")[2].checked = true; // maxPlay
-  document.querySelectorAll("input[name='write-players-needed']")[3].checked = true; // playersNeeded
-  document.querySelectorAll("input[name='write-host-rank']")[4].checked = true; // hostRank
-  document.querySelectorAll("input[name='write-guest-rank']")[0].checked = true; // guestRank
-  document.getElementById("write-stamp-type-1").checked = true;
-  document.getElementById("write-stamp-type-2").checked = true;
-  document.getElementById("write-stamp-type-3").checked = true;
 }
 
 function getRoomModalValues() {
@@ -253,9 +236,7 @@ function createPostContent() {
   const {
     roomId,
     isVeteranRoom,
-    isRandomRoom,
-    isEnvyRoom,
-    isLosuenRoom,
+    limitMusic,
     isMVRoom,
     allowPlayForStaminaEmpty,
     allowEasyModeWithAFK,
@@ -263,6 +244,9 @@ function createPostContent() {
     playersNeeded,
     hostRank,
     guestRank,
+    stamp1,
+    stamp2,
+    stamp3,
   } = __room__;
 
   let text = "";
@@ -272,29 +256,29 @@ function createPostContent() {
   if (isMVRoom) {
     text += "3DMV ";
   }
-  if (isEnvyRoom) {
-    text += "🦐 ";
-  }
-  if (isLosuenRoom) {
-    text += "ロスエン ";
-  }
-  if (isRandomRoom) {
-    text += "おまかせ ";
-  }
-  if (allowPlayForStaminaEmpty) {
-    text += "火消し ";
+  if (!allowPlayForStaminaEmpty) {
+    text += "火消し❌ ";
   }
   if (allowEasyModeWithAFK) {
     text += "いじぺち ";
+  }
+  if (limitMusic && limitMusic !== "") {
+    text += `${limitMusic} `;
   }
   text += maxPlay + "\n\n";
   text += `🔑 ${roomId} ${playersNeeded}\n`
   text += `主 : ${hostRank}\n`;
   text += `募 : ${guestRank}\n\n`;
 
-  text += `一時的な退室 : もう一回みのり\n`;
-  text += `解散(主)           : 乙咲希\n`;
-  text += `抜ける              : またね系\n\n`;
+  if (stamp1) {
+    text += `一時的な退室 : もう一回みのり\n`;
+  }
+  if (stamp2) {
+    text += `解散(主)           : 乙咲希\n`;
+  }
+  if (stamp3) {
+    text += `抜ける              : またね系\n\n`;
+  }
 
   // text += `Posted by pjsk pr\n\n`;
 
@@ -325,10 +309,8 @@ function renderRoomModal() {
   const {
     roomId,
     isVeteranRoom,
-    isRandomRoom,
-    isEnvyRoom,
-    isLosuenRoom,
     isMVRoom,
+    limitMusic,
     allowPlayForStaminaEmpty,
     allowEasyModeWithAFK,
     maxPlay,
@@ -359,20 +341,14 @@ function renderRoomModal() {
   if (isMVRoom) {
     opt += `<span class="badge text-bg-primary">3DMV</span>\n`;
   }
-  if (isEnvyRoom) {
-    opt += `<span class="badge text-bg-primary">🦐</span>\n`;
-  }
-  if (isLosuenRoom) {
-    opt += `<span class="badge text-bg-primary">ロスエン</span>\n`;
-  }
-  if (isRandomRoom) {
-    opt += `<span class="badge text-bg-primary">おまかせ</span>\n`;
-  }
-  if (allowPlayForStaminaEmpty) {
-    opt += `<span class="badge text-bg-primary">火消し</span>\n`;
+  if (!allowPlayForStaminaEmpty) {
+    opt += `<span class="badge text-bg-primary">火消し❌</span>\n`;
   }
   if (allowEasyModeWithAFK) {
     opt += `<span class="badge text-bg-primary">いじぺち</span>\n`;
+  }
+  if (limitMusic) {
+    opt += `<span class="badge text-bg-primary">${limitMusic}</span>\n`;
   }
 
   // stats
@@ -528,6 +504,8 @@ getMsg("collect", function(err, req, event) {
     return Object.assign(post, parsePostContent(post.content));
   });
 
+  // console.log("New Posts:", newPosts);
+
   // remove dupe in new posts
   newPosts = newPosts.reduce(function(prev, curr) {
     if (!curr.roomId) {
@@ -608,9 +586,6 @@ getMsg("update", function(err, req) {
 
 // open write modal
 document.getElementById("write-modal").addEventListener('shown.bs.modal', function(e) {
-  // reset input values
-  // clearWriteModalValues();
-  
   // focus to room id input
   document.getElementById("write-room-id").focus();
 });

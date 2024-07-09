@@ -9,12 +9,9 @@ Search for Project SEKAI public room from twitter.
 ## Features
 
 - Search public rooms created in 1 hour.
-- ルームID, 更新時間, 部屋のタイプ(フリーとベテラン), 🦐, おまかせ, MV, 火消し, プレー回数, 募集している人数, 募集条件...
 - Highlight on updated room.
 - Create a public room with simply settings.
-- 部屋のタイプ, 🦐, おまかせ, MV, 火消し, プレー回数, 募集している人数, 募集条件（星）, スタンプ...
 - Update room created with this application.
-- 募集している人数, プレー回数...
 - Show original content when left click row.
 
 <div>
@@ -25,6 +22,10 @@ Search for Project SEKAI public room from twitter.
   <img src="./images/3.png" width="100%">
 </div>
 
+<div>
+  <img src="./images/4.png" width="50%">
+</div>
+
 ## Fields
 
 | Field | Description |
@@ -32,11 +33,9 @@ Search for Project SEKAI public room from twitter.
 | 🕒 | Time | 
 | 🔑 | Room ID | 
 | ベテラン | Veteran Room | 
-| 🦐 | Play only "独りんぼエンヴィー" | 
-| ロスエン | Play only "ロストエンファウンド" | 
-| おまかせ | Play only random song | 
+| 曲 | Play only "選曲", "おまかせ", "独りんぼエンヴィー", "ロストエンファウンド", "sage" | 
 | 3DMV | Play 3DMV mode (Do not set default clothes) | 
-| 火消し | Allow play for stamina empty | 
+| 火消し | Allow play for stamina empty (default value:⭕) | 
 | いじぺち | Allow AFK after get S rank | 
 | 回 | Maximum count of play | 
 | @ | Required number of players | 
@@ -55,3 +54,6 @@ Search for Project SEKAI public room from twitter.
 - Add ロスエン field.
 - Fix img element parsing.
 - Add resting time to collector.
+- Add 曲 field.
+- Remove 🦐, ロスエン, おまかせ fields.
+- Fix stamp option.

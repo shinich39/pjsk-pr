@@ -60,7 +60,7 @@ let mainWindow,
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 1024,
+    width: 1200,
     height: 1024,
     webPreferences: {
       preload: path.join(__dirname, 'js', 'preload.js'),
@@ -100,7 +100,7 @@ function createCollectorWindow() {
 function createWriterWindow(url) {
   return new Promise(function(resolve, reject) {
     writerWindow = new BrowserWindow({
-      width: 1024,
+      width: 1200,
       height: 1024,
       webPreferences: {
         preload: path.join(__dirname, 'js', 'writer.js'),
@@ -127,7 +127,7 @@ function closeWriterWindow() {
 function createUpdaterWindow(url) {
   return new Promise(function(resolve, reject) {
     updaterWindow = new BrowserWindow({
-      width: 1024,
+      width: 1200,
       height: 1024,
       webPreferences: {
         preload: path.join(__dirname, 'js', 'update.js'),

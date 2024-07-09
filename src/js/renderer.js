@@ -99,7 +99,7 @@ function createTable() {
       {title: "🕒", field: "date", width: 64, ...DATE_OPTIONS},
       {title: "🔑", field: "roomId", sorter: "string", width: 64,},
       {title: "ベテラン", field: "isVeteranRoom", width: 68, ...BOOLEAN_OPTIONS},
-      {title: "🦐",field: "isEnvyRoom", width: 48, ...BOOLEAN_OPTIONS},
+      {title: "🦐", field: "isEnvyRoom", width: 48, ...BOOLEAN_OPTIONS},
       {title: "ロスエン",field: "isLosuenRoom", width: 68, ...BOOLEAN_OPTIONS},
       {title: "おまかせ", field: "isRandomSong", width: 68, ...BOOLEAN_OPTIONS},
       {title: "3DMV", field: "isMVRoom", width: 56, ...BOOLEAN_OPTIONS},
@@ -145,14 +145,15 @@ function parsePostContent(str) {
     .toLowerCase()
     .replace(/[･・┆┊︎꒰꒱|_\-=[\]()*&\$<>{}\:\^!?]/g, "")
     .replace(/🙅|🙅‍♂️|🙅‍♀️|⛔|🚫|✕/g, "❌")
+    .replace(/🦐/g, "エンヴィー")
     .replace(/[^\S\r\n]+/g, " ")
     .replace(/\r\n/g, "\n")
     .replace(/\n+/g, "\n");
 
   const roomId = /[^@0-9]([0-9][0-9][0-9][0-9][0-9])[^回0-9]/.exec(str)?.[1];
   const isVeteranRoom = /ベテラン/.test(str);
-  const isEnvyRoom = /(🦐|エビ|エンヴィー)/.test(str) && !/(🦐|エビ|エンヴィー)[^\n]{0,2}(不|x|no|❌)/.test(str);
-  const isLosuenRoom = /(ロスエン)/.test(str) && !/(ロスエン)[^\n]{0,2}(不|x|no|❌)/.test(str); // ロストエンファウンド
+  const isEnvyRoom = /(エビ|エンヴィー)/.test(str) && !/(エビ|エンヴィー)[^\n]{0,2}(以外|不|x|no|❌)/.test(str);
+  const isLosuenRoom = /(ロスエン)/.test(str) && !/(ロスエン)[^\n]{0,2}(以外|不|x|no|❌)/.test(str); // ロストエンファウンド
   const isMVRoom = /(3dmv|mv)/.test(str) && !/(3dmv|mv)[^\n]{0,2}(不|x|no|❌)/.test(str);
   const isSelectSong = /(選曲)/.test(str) && !/(選曲)[^\n]{0,2}(不|x|no|❌)/.test(str);
   const isRandomSong = /(おまかせ)/.test(str) && !/(おまかせ)[^\n]{0,2}(不|x|no|❌)/.test(str);
@@ -162,7 +163,7 @@ function parsePostContent(str) {
   const playersNeeded = /@[^\S\r\n]*([0-9])+/.exec(str)?.[1];
   const hostStat = /\n.?(?:主)([^\n]+)\n/.exec(str)?.[1]?.trim();
   const guestStat = /\n.?(?:募|求)([^\n]+)\n/.exec(str)?.[1].trim();
-
+  
   return {
     roomId,
     isVeteranRoom,

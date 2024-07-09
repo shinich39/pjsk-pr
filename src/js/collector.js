@@ -8,11 +8,12 @@ const MIN_INIT_TIME = 3000;
 const MAX_INIT_TIME = 6000;
 const MIN_REFRESH_TIME = 4000;
 const MAX_REFRESH_TIME = 12000;
+const REFRESH_TIME = 1000 * 60 * 2; // 2 min
 
 let inProgress = false,
     toggle = false, 
     count = 0,
-    COUNT_RELOAD = 39;
+    COUNT_RELOAD = 10;
 
 window.addEventListener('DOMContentLoaded', async function() {
   // init
@@ -60,8 +61,8 @@ window.addEventListener('DOMContentLoaded', async function() {
       toggle = !toggle;
       count++;
       
-      if (count > COUNT_RELOAD) {
-        location.reload();
+      if (count % COUNT_RELOAD === 0) {
+        await wait(REFRESH_TIME);
       }
     }
     await wait(Math.floor(random(MIN_REFRESH_TIME, MAX_REFRESH_TIME)));
@@ -161,6 +162,18 @@ async function getPosts() {
     }
   }
 
+  function parseImg(post) {
+    const imgs = post.querySelectorAll("img");
+    for (const img of imgs) {
+      const alt = img.getAttribute("alt");
+      if (alt) {
+        const span = document.createElement("span");
+        span.innerHTML = alt;
+        img.replaceWith(span);
+      }
+    }
+  }
+
   function getDate(post) {
     const elem = post.querySelector("time");
     return elem ? elem.getAttribute("datetime") : null;
@@ -179,6 +192,7 @@ async function getPosts() {
   const posts = document.querySelectorAll("article[role='article']");
   const result = [];
   for (const post of posts) {
+    parseImg(post);
     const postId = getPostId(post);
     const { userId, username } = getUser(post);
     const content = getContentText(post);

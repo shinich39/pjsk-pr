@@ -53,3 +53,4 @@ Search for Project SEKAI public room from twitter.
 ## updates
 
 - Add ロスエン field.
+- Fix img element parsing.

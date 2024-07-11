@@ -38,7 +38,7 @@ Search for Project SEKAI public room from twitter.
 
 | Field | Description |
 | --- | --- |
-| 🕒 | Time | 
+| 🕒 | Updated time | 
 | 🔑 | Room ID | 
 | ベテラン | Veteran Room | 
 | 3DMV | Play 3DMV mode (Do not set default clothes) | 
@@ -70,11 +70,6 @@ Join room
 
 ## Updates
 
-- Add ロスエン field.
-- Fix img element parsing.
-- Add resting time to collector.
-- Add 曲 field.
-- Remove 🦐, ロスエン, おまかせ fields.
-- Fix stamp option.
-- Changed collect algorithm
 - Add join button.
+- Prevent duplicate updates.
+- Change to preview modal from popup.

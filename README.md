@@ -12,7 +12,7 @@ Search for Project SEKAI public room from twitter.
 - As a guest, you join public room and update room.
 - Create a public room with simply settings.
 - Update room created with this application.
-- Show original content when mouse left click row.
+- Show original content when click the row.
 
 <div>
   <img src="./images/2.png" width="50%">

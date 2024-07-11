@@ -13,21 +13,43 @@
   <!-- Header -->
   <div class="container-fluid" style="background-color: #ddd; border-top: 1px solid #aaa; border-left: 1px solid #aaa; border-right: 1px solid #aaa;">
     <div class="d-flex justify-content-between align-items-center py-2">
-      <a 
-        id="open-git" 
-        href="javascript:void(0)" 
-        style="font-size: 0.8rem; color: #000; text-decoration: none;">
-        pjsk pr
-      </a>
+      <div class="flex-fill">
+        <a 
+          id="open-git"
+          class="flex-fill"
+          href="javascript:void(0)" 
+          style="font-size: 0.8rem; color: #000; text-decoration: none;">
+            pjsk pr
+          </a>
+      </div>
+
+      <!-- applied power calculator -->
+      <div class="input-group" style="width: 562px;">
+        <span class="input-group-text" style="font-size: 0.8rem;">1</span>
+        <input id="power-input-1" type="string" class="form-control" aria-label="Reader" style="font-size: 0.8rem;">
+        <span class="input-group-text" style="font-size: 0.8rem;">2</span>
+        <input id="power-input-2" type="string" class="form-control" aria-label="Sub Reader" style="font-size: 0.8rem;">
+        <span class="input-group-text" style="font-size: 0.8rem;">3</span>
+        <input id="power-input-3" type="string" class="form-control" aria-label="Normal" style="font-size: 0.8rem;">
+        <span class="input-group-text" style="font-size: 0.8rem;">4</span>
+        <input id="power-input-4" type="string" class="form-control" aria-label="Normal" style="font-size: 0.8rem;">
+        <span class="input-group-text" style="font-size: 0.8rem;">5</span>
+        <input id="power-input-5" type="string" class="form-control" aria-label="Normal" style="font-size: 0.8rem;">
+        <span class="input-group-text" style="font-size: 0.8rem;">=</span>
+        <input id="power-input-6" type="string" class="form-control" aria-label="Result" style="width: 110px; font-size: 0.8rem;" readonly>
+      </div>
   
-      <button 
-        id="write-button" 
-        type="button"
-        class="btn btn-primary btn-sm"
-        data-bs-toggle="modal"
-        data-bs-target="#write-modal">
-          New Room
-      </button>
+      <div class="ps-2">
+        <button 
+          id="write-button" 
+          type="button"
+          class="btn btn-primary btn-sm"
+          data-bs-toggle="modal"
+          data-bs-target="#write-modal">
+            New Room
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -306,11 +328,6 @@
         <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
     </div>
-
-  </div>
-
-  <!-- Center Toasts -->
-  <div class="toast-container position-fixed bottom-0 end-0 p-3">
 
     <!-- Preview Toast -->
     <div id="preview-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">

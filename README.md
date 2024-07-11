@@ -13,6 +13,7 @@ Search for Project SEKAI public room from twitter.
 - Create a public room with simply settings.
 - Update room created with this application.
 - Show original content when click the row.
+- Calculate applied card power and show room that not meeting power required.
 
 ## Fields
 
@@ -75,3 +76,4 @@ Sign in to twitter. (need to once)
 - Add join button.
 - Prevent duplicate updates.
 - Change to preview modal from popup.
+- Add applied power calculator.

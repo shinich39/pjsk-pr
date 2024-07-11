@@ -1,7 +1,11 @@
 import * as util from "./src/js/util.min.mjs";
 
-const str = `あと1111111人`;
+const str = `実効値140%↑225%↑SF狙い`;
 
-const res = str.replace(/(?:あと|@)([1-4])+人?/g, (s, s1) => `@${s1}`);
+const res = /([1-2][0-9][0-9])[^0-9]+([1-2][0-9][0-9])/g.exec(str);
 
-console.log(res)
+let readerPowerLimit = /(?:[^実][^効][^値])([1-2][0-9][0-9])/.exec(str)?.[1];
+let appliedPowerLimit = readerPowerLimit ?
+  /(?:[1-2][0-9][0-9])[^\n0-9]+([1-2][0-9][0-9])/g.exec(str)?.[1] :
+  /(?:実効値)([1-2][0-9][0-9])/.exec(str)?.[1];
+console.log(readerPowerLimit, appliedPowerLimit)

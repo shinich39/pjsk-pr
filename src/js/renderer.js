@@ -17,7 +17,7 @@ const previewToast = bootstrap.Toast.getOrCreateInstance(document.getElementById
 const writeModal = new bootstrap.Modal('#write-modal', { keyboard: false });
 // init room modal
 const roomModal = new bootstrap.Modal('#room-modal', { keyboard: false });
-const ROW_BACKGROUND_COLORSET= ["#bcbcbc", "#ffabab", "#ffbcbc", "#ffcdcd", "#ffdfdf"];
+const ROW_BACKGROUND_COLORSET= ["#ffbcbc", "#ffabab", "#ffbcbc", "#ffcdcd", "#ffdfdf"];
 const EXPIRE_TIME = 1000 * 60 * 60; // a hour
 const EXPIRE_DELAY = 1000 * 60; // a min
 const INITIAL_SORT = [{column: "time", dir: "desc"}];
@@ -35,7 +35,35 @@ const TIME_OPTIONS = {
     return moment(cell.getValue()).fromNow();
   },
 };
+
 const ROW_FORMATTER = {
+  rowFormatter: function(row) {
+    const elem = row.getElement();
+    if (!__readerPower__) {
+      elem.style.backgroundColor = "";
+      return;
+    }
+
+    let { guestStat } = row.getData();
+    guestStat = "   " + guestStat.replace(/実効値|実効|実/, "実効値");
+    
+    let readerPowerLimit = /(?:[^実][^効][^値])([1][0-9][0-9])/.exec(guestStat)?.[1];
+    let appliedPowerLimit = readerPowerLimit ?
+      /(?:[1][0-9][0-9])[^\n0-9]+([1-2][0-9][0-9])/g.exec(guestStat)?.[1] :
+      /(?:実効値)([1-2][0-9][0-9])/.exec(guestStat)?.[1];
+
+    if (readerPowerLimit && __readerPower__ < readerPowerLimit) {
+      elem.style.backgroundColor = ROW_BACKGROUND_COLORSET[0];
+      return;
+    }
+
+    if (__appliedPower__ && __appliedPower__ < appliedPowerLimit) {
+      elem.style.backgroundColor = ROW_BACKGROUND_COLORSET[0];
+      return;
+    }
+
+    elem.style.backgroundColor = "";
+  }
   // rowFormatter: function(row) {
   //   const data = row.getData();
 
@@ -65,9 +93,14 @@ const STAMP_URLS = [
   "https://github.com/shinich39/pyjs/blob/main/src/img/stamp0421.png", // otsusaki
 ];
 
+const MIN_POWER = 50;
+const MAX_POWER = 150;
+const POWER_RATES = [1, 0.2, 0.2, 0.2, 0.2];
 const DEBUG = false;
 
-let roomModalTimer,
+let __roomModalTimer__ = null,
+    __appliedPower__ = null,
+    __readerPower__ = null,
     __table__, 
     __room__, 
     __contents__ = []; // fix twitter error: message duplicated
@@ -110,68 +143,72 @@ function createTable() {
   });
 
   // highlight
-  __table__.on("rowUpdated", function(row){
-    const element = row.getElement();
-    if (element.style.backgroundColor !== "#fcffcf") {
-      const tmp = element.style.backgroundColor;
-      element.style.backgroundColor = "#fcffcf";
-      setTimeout(function() {
-        element.style.backgroundColor = tmp;
-      }, 3072);
-    }
-  });
+  __table__.on("rowUpdated", rowUpdatedHandler);
 
   // preview
-  __table__.on("rowClick", function(e, row){
-    const data = row.getData();
-    const title = document.getElementById("preview-title");
-    const time = document.getElementById("preview-time");
-    const body = document.getElementById("preview-body");
-    body.innerHTML = "";
-    const wrapper = document.getElementById("preview-button-wrapper");
-    wrapper.innerHTML = "";
-
-    const joinButton = document.createElement("button");
-    joinButton.className = "btn btn-primary btn-sm w-100";
-    joinButton.innerHTML = "Join";
-    joinButton.addEventListener("click", function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // set room data
-      __room__ = getValuesFromData(data);
-    
-      // stop collect
-      pauseCollector();
-    
-      // render room modal comtent
-      renderRoomModal();
-    
-      // create room modal timer
-      const timeElem = document.getElementById("room-modal-time");
-      const startedAt = moment();
-      roomModalTimer = setInterval(function() {
-        timeElem.innerHTML = moment.utc(moment.duration(moment().diff(startedAt)).valueOf()).format("HH:mm:ss");
-      });
-    
-      roomModal.show();
-    });
-    
-    const content = document.createElement("pre");
-    content.style.margin = "0";
-    content.style.whiteSpace = "pre-wrap";
-    content.innerHTML = data.html;
-
-    title.innerHTML = `🔑 ${data.roomId}`;
-    time.innerHTML = moment(data.time).fromNow();
-    body.appendChild(content);
-
-    wrapper.appendChild(joinButton);
-
-    previewToast.show();
-  });
+  __table__.on("rowClick", rowClickHandler);
 
   setInterval(removeExpiredPosts, EXPIRE_DELAY);
+}
+
+function rowUpdatedHandler(row) {
+  const element = row.getElement();
+  if (element.style.backgroundColor !== "#fcffcf") {
+    const tmp = element.style.backgroundColor;
+    element.style.backgroundColor = "#fcffcf";
+    setTimeout(function() {
+      element.style.backgroundColor = tmp;
+    }, 3072);
+  }
+}
+
+function rowClickHandler(e, row) {
+  const data = row.getData();
+  const title = document.getElementById("preview-title");
+  const time = document.getElementById("preview-time");
+  const body = document.getElementById("preview-body");
+  body.innerHTML = "";
+  const wrapper = document.getElementById("preview-button-wrapper");
+  wrapper.innerHTML = "";
+
+  const joinButton = document.createElement("button");
+  joinButton.className = "btn btn-primary btn-sm w-100";
+  joinButton.innerHTML = "Join";
+  joinButton.addEventListener("click", function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // set room data
+    __room__ = getValuesFromData(data);
+  
+    // stop collect
+    pauseCollector();
+  
+    // render room modal comtent
+    renderRoomModal();
+  
+    // create room modal timer
+    const timeElem = document.getElementById("room-modal-time");
+    const startedAt = moment();
+    __roomModalTimer__ = setInterval(function() {
+      timeElem.innerHTML = moment.utc(moment.duration(moment().diff(startedAt)).valueOf()).format("HH:mm:ss");
+    });
+  
+    roomModal.show();
+  });
+  
+  const content = document.createElement("pre");
+  content.style.margin = "0";
+  content.style.whiteSpace = "pre-wrap";
+  content.innerHTML = data.html;
+
+  title.innerHTML = `🔑 ${data.roomId}`;
+  time.innerHTML = moment(data.time).fromNow();
+  body.appendChild(content);
+
+  wrapper.appendChild(joinButton);
+
+  previewToast.show();
 }
 
 function parsePostContent(content) {
@@ -698,7 +735,7 @@ function writePost() {
     // create room modal timer
     const timeElem = document.getElementById("room-modal-time");
     const startedAt = moment();
-    roomModalTimer = setInterval(function() {
+    __roomModalTimer__ = setInterval(function() {
       timeElem.innerHTML = moment.utc(moment.duration(moment().diff(startedAt)).valueOf()).format("HH:mm:ss");
     });
 
@@ -800,7 +837,7 @@ getMsg("write", function(err, req) {
     // create room modal timer
     const timeElem = document.getElementById("room-modal-time");
     const startedAt = moment();
-    roomModalTimer = setInterval(function() {
+    __roomModalTimer__ = setInterval(function() {
       timeElem.innerHTML = moment.utc(moment.duration(moment().diff(startedAt)).valueOf()).format("HH:mm:ss");
     });
 
@@ -862,9 +899,9 @@ document.getElementById("write-submit").addEventListener("click", function(e) {
 // close room modal
 document.getElementById("room-close").addEventListener("click", function(e) {
   // clear room modal timer
-  if (roomModalTimer) {
-    clearInterval(roomModalTimer);
-    roomModalTimer = null;
+  if (__roomModalTimer__) {
+    clearInterval(__roomModalTimer__);
+    __roomModalTimer__ = null;
   }
 
   // resume collector
@@ -891,6 +928,82 @@ document.getElementById("room-update").addEventListener("click", function(e) {
 
 document.getElementById("open-git").addEventListener("click", function(e) {
   sendMsg("open-git");
+});
+
+function calcPowerRange() {
+  const values = [
+    document.getElementById("power-input-1").value,
+    document.getElementById("power-input-2").value,
+    document.getElementById("power-input-3").value,
+    document.getElementById("power-input-4").value,
+    document.getElementById("power-input-5").value,
+  ].map(function(item) {
+    return util.isNumeric(item) ? [parseInt(item), parseInt(item)] : [MIN_POWER, MAX_POWER];
+  });
+
+  let readerPower;
+  let minPowers = [
+    Number.MAX_SAFE_INTEGER,
+    Number.MAX_SAFE_INTEGER,
+    Number.MAX_SAFE_INTEGER,
+    Number.MAX_SAFE_INTEGER,
+    Number.MAX_SAFE_INTEGER,
+  ];
+  let maxPowers = [
+    Number.MIN_SAFE_INTEGER,
+    Number.MIN_SAFE_INTEGER,
+    Number.MIN_SAFE_INTEGER,
+    Number.MIN_SAFE_INTEGER,
+    Number.MIN_SAFE_INTEGER,
+  ];
+  for (let i = 0; i < values.length; i++) {
+    const rate = POWER_RATES[i];
+    const mnp = values[i][0] * rate;
+    const mxp = values[i][1] * rate;
+    if (i === 0) {
+      readerPower = mnp === mxp ? mnp : null;
+    }
+    if (minPowers[i] > mnp) {
+      minPowers[i] = mnp;
+    }
+    if (maxPowers[i] < mxp) {
+      maxPowers[i] = mxp;
+    }
+  }
+
+  return [
+    readerPower,
+    Math.round(minPowers.reduce((p, c) => p + c, 0)),
+    Math.round(maxPowers.reduce((p, c) => p + c, 0)),
+  ];
+}
+
+[
+  document.getElementById("power-input-1"),
+  document.getElementById("power-input-2"),
+  document.getElementById("power-input-3"),
+  document.getElementById("power-input-4"),
+  document.getElementById("power-input-5"),
+].forEach(function(elem, idx) {
+  elem.addEventListener("input", function(e) {
+    const target = document.getElementById("power-input-6");
+    const [r, a, b] = calcPowerRange();
+
+    // set reader power
+    __readerPower__ = r;
+
+    // set applied power
+    if (a === b) {
+      target.value = `${a}%`;
+      __appliedPower__ = a;
+    } else {
+      target.value = `${a}% ~ ${b}%`;
+      __appliedPower__ = null;
+    }
+
+    // redraw
+    __table__.redraw(true);
+  });
 });
 
 document.addEventListener("keydown", function(e) {

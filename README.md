@@ -76,4 +76,4 @@ Sign in to twitter. (need to once)
 - Add join button.
 - Prevent duplicate updates.
 - Change to preview modal from popup.
-- Add applied power calculator.
+- Add applied power calculator and highlight rooms that not meeting power required.

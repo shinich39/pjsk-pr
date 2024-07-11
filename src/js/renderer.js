@@ -53,9 +53,9 @@ const ROW_FORMATTER = {
 
     guestStat = "   " + guestStat.replace(/実効値|実効|実/, "実効値");
     
-    let readerPowerLimit = /(?:[^実][^効][^値])([1][0-9][0-9])/.exec(guestStat)?.[1];
+    let readerPowerLimit = /(?:[^実][^効][^値])([1][0-6][0-9])/.exec(guestStat)?.[1];
     let appliedPowerLimit = readerPowerLimit ?
-      /(?:[1][0-9][0-9])[^\n0-9]+([1-3][0-9][0-9])/g.exec(guestStat)?.[1] :
+      /(?:[1][0-6][0-9])[^\n0-9]+([1-3][0-9][0-9])/g.exec(guestStat)?.[1] :
       /(?:実効値)([1-3][0-9][0-9])/.exec(guestStat)?.[1] || /([1-3][0-9][0-9])/.exec(guestStat)?.[1];
 
     if (__readerPower__ && readerPowerLimit && __readerPower__ < readerPowerLimit) {
@@ -72,28 +72,6 @@ const ROW_FORMATTER = {
 
     elem.style.backgroundColor = "";
   }
-  // rowFormatter: function(row) {
-  //   const data = row.getData();
-
-  //   // expired
-  //   if (data.time+ EXPIRE_TIME < Date.now()) {
-  //     row.getElement().style.backgroundColor = ROW_BACKGROUND_COLORSET[0];
-  //   } 
-
-  //   // players
-  //   else if (/1/.test(data.playersNeeded)) {
-  //     row.getElement().style.backgroundColor = ROW_BACKGROUND_COLORSET[1];
-  //   } else if (/2/.test(data.playersNeeded)) {
-  //     row.getElement().style.backgroundColor = ROW_BACKGROUND_COLORSET[2];
-  //   } else if (/3/.test(data.playersNeeded)) {
-  //     row.getElement().style.backgroundColor = ROW_BACKGROUND_COLORSET[3];
-  //   } else if (/4|5/.test(data.playersNeeded)) {
-  //     row.getElement().style.backgroundColor = ROW_BACKGROUND_COLORSET[4];
-  //   } else {
-  //     row.getElement().style.backgroundColor = ROW_BACKGROUND_COLORSET[0];
-  //   }
-    
-  // }
 }
 
 const STAMP_URLS = [

@@ -1,18 +1,26 @@
 const { sendMsg, sendErr, getMsg, waitMsg } = window.electron;
+// init moment
+try {
+  console.log("Found device languages:", navigator.languages?.[0], navigator.language);
+  moment.relativeTimeThreshold('ss', 0);
+  moment.locale(navigator.languages?.[0] || navigator.language || "ja-JP");
+} catch(err) {
+  console.error(err);
+}
 // init error toast
 const errorToast = bootstrap.Toast.getOrCreateInstance(document.getElementById('error-toast'));
 // init message toast
 const messageToast = bootstrap.Toast.getOrCreateInstance(document.getElementById('message-toast'));
+// init preview toast
+const previewToast = bootstrap.Toast.getOrCreateInstance(document.getElementById('preview-toast'));
 // init write modal
 const writeModal = new bootstrap.Modal('#write-modal', { keyboard: false });
 // init room modal
 const roomModal = new bootstrap.Modal('#room-modal', { keyboard: false });
-// init luxon.js
-window.DateTime = luxon.DateTime;
 const ROW_BACKGROUND_COLORSET= ["#bcbcbc", "#ffabab", "#ffbcbc", "#ffcdcd", "#ffdfdf"];
 const EXPIRE_TIME = 1000 * 60 * 60; // a hour
 const EXPIRE_DELAY = 1000 * 60; // a min
-const INITIAL_SORT = [{column: "date", dir: "desc"}];
+const INITIAL_SORT = [{column: "time", dir: "desc"}];
 const BOOLEAN_OPTIONS = {
   sorter: "boolean",
   formatter: "tickCross",
@@ -21,34 +29,18 @@ const BOOLEAN_OPTIONS = {
     "tristate": true
   }
 };
-const DATE_OPTIONS = {
-  sorter: "datetime",
-  sorterParams:{
-    format:"iso",
-    alignEmptyValues: "bottom",
+const TIME_OPTIONS = {
+  sorter: "number",
+  formatter: function(cell, formatterParams, onRendered) {
+    return moment(cell.getValue()).fromNow();
   },
-  formatter: "datetime",
-  formatterParams: {
-    inputFormat: "iso",
-    outputFormat: "HH:mm:ss",
-  }
-};
-const ROW_CLICK_POPUP = {
-  rowClickPopup: function(e, row, onRendered) {
-    const data = row.getData();
-
-    let container = document.createElement("pre");
-    container.innerHTML = data.html.replace(/href="[^"]+"/g, "");
-
-    return container;
-  }
 };
 const ROW_FORMATTER = {
   // rowFormatter: function(row) {
   //   const data = row.getData();
 
   //   // expired
-  //   if (DateTime.fromISO(data.date).valueOf() + EXPIRE_TIME < Date.now()) {
+  //   if (data.time+ EXPIRE_TIME < Date.now()) {
   //     row.getElement().style.backgroundColor = ROW_BACKGROUND_COLORSET[0];
   //   } 
 
@@ -73,6 +65,8 @@ const STAMP_URLS = [
   "https://github.com/shinich39/pyjs/blob/main/src/img/stamp0421.png", // otsusaki
 ];
 
+const DEBUG = false;
+
 let roomModalTimer,
     __table__, 
     __room__, 
@@ -89,20 +83,19 @@ function createTable() {
       // headerFilter: true,
       headerSort: false,
       headerHozAlign: "center",
-      hozAlign: "center",
+      // hozAlign: "center",
     },
     initialSort: INITIAL_SORT,
     ...ROW_FORMATTER,
-    ...ROW_CLICK_POPUP,
     columns: [
-      {title: "🕒", field: "date", width: 64, ...DATE_OPTIONS},
-      {title: "🔑", field: "roomId", sorter: "string", width: 64,},
+      {title: "🕒", field: "time", width: 96, ...TIME_OPTIONS},
+      {title: "🔑", field: "roomId", sorter: "string", width: 64, hozAlign: "center" },
       {title: "ベテラン", field: "isVeteranRoom", width: 68, ...BOOLEAN_OPTIONS},
       {title: "3DMV", field: "isMVRoom", width: 56, ...BOOLEAN_OPTIONS},
       {title: "火消し", field: "allowPlayForStaminaEmpty", width: 68, ...BOOLEAN_OPTIONS},
       {title: "いじぺち", field: "allowEasyModeWithAFK", width: 68, ...BOOLEAN_OPTIONS},
       {title: "曲", field: "limitMusic", width: 68, sorter: "string",},
-      {title: "回", field: "maxPlay", width: 48, sorter: "string",},
+      {title: "回", field: "playsRemaining", width: 48, sorter: "string",},
       {title: "@", field: "playersNeeded", width: 48, sorter: "string",},
       {title: "主", field: "hostStat", sorter: "string", hozAlign: "left"},
       {title: "募", field: "guestStat", sorter: "string", hozAlign: "left"},
@@ -116,6 +109,7 @@ function createTable() {
     ]
   });
 
+  // highlight
   __table__.on("rowUpdated", function(row){
     const element = row.getElement();
     if (element.style.backgroundColor !== "#fcffcf") {
@@ -123,73 +117,150 @@ function createTable() {
       element.style.backgroundColor = "#fcffcf";
       setTimeout(function() {
         element.style.backgroundColor = tmp;
-      }, 1024);
+      }, 3072);
     }
+  });
+
+  // preview
+  __table__.on("rowClick", function(e, row){
+    const data = row.getData();
+    const title = document.getElementById("preview-title");
+    const time = document.getElementById("preview-time");
+    const body = document.getElementById("preview-body");
+    body.innerHTML = "";
+    const wrapper = document.getElementById("preview-button-wrapper");
+    wrapper.innerHTML = "";
+
+    const joinButton = document.createElement("button");
+    joinButton.className = "btn btn-primary btn-sm w-100";
+    joinButton.innerHTML = "Join";
+    joinButton.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // set room data
+      __room__ = getValuesFromData(data);
+    
+      // stop collect
+      pauseCollector();
+    
+      // render room modal comtent
+      renderRoomModal();
+    
+      // create room modal timer
+      const timeElem = document.getElementById("room-modal-time");
+      const startedAt = moment();
+      roomModalTimer = setInterval(function() {
+        timeElem.innerHTML = moment.utc(moment.duration(moment().diff(startedAt)).valueOf()).format("HH:mm:ss");
+      });
+    
+      roomModal.show();
+    });
+    
+    const content = document.createElement("pre");
+    content.style.margin = "0";
+    content.style.whiteSpace = "pre-wrap";
+    content.innerHTML = data.html;
+
+    title.innerHTML = `🔑 ${data.roomId}`;
+    time.innerHTML = moment(data.time).fromNow();
+    body.appendChild(content);
+
+    wrapper.appendChild(joinButton);
+
+    previewToast.show();
   });
 
   setInterval(removeExpiredPosts, EXPIRE_DELAY);
 }
 
-function parsePostContent(str) {
+function parsePostContent(content) {
 
   // function getHeader(str) {
   //   const re = /\n(募|求)[^\n]+\n/g;
   //   return !re.test(str) ? str : str.substring(0, re.lastIndex);
-  // } 
+  // }
+
+  originalContent = content;
 
   // normalize
-  str = util.toHalfWidth(str)
+  content = util.toHalfWidth(content)
     .toLowerCase()
     .trim()
+    // save options
+    .replace(/もう一回/g, "STAMP1")
     // to single linebreak
     .replace(/\r\n/g, "\n")
     .replace(/\n+/g, "\n")
     // remove all whitespace
     .replace(/([0-9])[^\S\r\n]+([0-9])/g, (s, s1, s2) => `${s1}|${s2}`)
-    .replace(/[^\S\r\n]+/g, "") 
+    .replace(/[^\S\r\n]+/g, "")
     // remove special characters
-    .replace(/[･・￤…‗╎┆┊︎▹|_\-=*&\$⇒\:\^!?▷▶︎→✧]/g, " ")
-    .replace(/[()[\]꒰꒱<>]/g, " ")
+    .replace(/[･・￤…‗╎┆┊︎╏▹|_\-=*&\$⇒\:\^!?▷▶︎→✧]/g, " ")
+    .replace(/[()[\]꒰꒱<>【】{}「」『』〈〉≪≫《》〔〕〖〗]/g, " ")
     .replace(/[^\S\r\n]+/g, " ") 
-    .replace(/不可|不|以外|🙅|🙅‍♂️|🙅‍♀️|⛔|🚫|⛔|✕|✖|✖️|❎|🆖|❌/g, "❌")
-    .replace(/([^A-Za-z])(?:x|no)([^A-Za-z])/g, (s, c1, c2) => `${c1}❌${c2}`)
+    // remove kanji numbers
+    .replace(/一/g, "1")
+    .replace(/二/g, "2")
+    .replace(/三/g, "3")
+    .replace(/四/g, "4")
+    // remove hiragana
+    .replace(/あっと([1-4])+/g, (s, s1) => `@${s1}`)
+    .replace(/ひとり/g, "1人")
+    .replace(/ふたり/g, "2人")
+    // remove あと following 回
+    .replace(/(?:あと)([0-9]+)回/g, (s, s1) => `${s1}回`)
+    // remove あと following 人
+    .replace(/(?:あと|@)([1-4])+人?/g, (s, s1) => `@${s1}`)
+    // remove emoji
+    .replace(/([^A-Za-z0-9])(?:x|no)([^A-Za-z0-9])/g, (s, c1, c2) => `${c1}❌${c2}`)
+    .replace(/不可|不|以外|🙅|🙅‍♂️|🙅‍♀️|⛔|🚫|⛔|×|✕|✖|✖️|❎|🆖|❌/g, "❌")
+    .replace(/([^A-Za-z0-9])(?:ok|o|yes)([^A-Za-z0-9])/g, (s, c1, c2) => `${c1}⭕${c2}`)
     .replace(/可|🙆‍♀️|👌|◎|◎|○|⭕|✔|✅|歓迎/g, "⭕")
-    .replace(/星|⭑|✦|⭐︎|☆|✰|⚝|⋆|✶|🌟|ִ ࣪𖤐|★|✮|ᯓ★|⭐/g, "⭐")
+    .replace(/星|ほし|✭|⭑|✦|⭐︎|☆|✰|⚝|⋆|✶|🌟|ִ ࣪𖤐|★|✮|ᯓ★|⭐/g, "⭐")
     .replace(/⤴|↑|⬆|🔼|⏫|▲|🆙|⬆️/g, "⬆️")
     .replace(/([0-9]+)(上|アップ)/g, (e, e1) => `${e1}⬆️`)
     .replace(/🦐|エビ|エンヴィー|独りんぼエンヴィー/g, "🦐") // 独りんぼエンヴィー
     .replace(/ロストエ|ロストエンファウンド/g, "ロストエ") // ロストエンファウンド
-    .replace(/(?:あと|あっと|@)(?:ひとり|1人|1|いち)([^回])/g, (s, s1) => `@1${s1}`)
-    .replace(/(?:あと|あっと|@)(?:ふたり|2人|2)([^回])/g, (s, s1) => `@2${s1}`)
-    .replace(/(?:あと|あっと|@)(?:3人|3)([^回])/g, (s, s1) => `@3${s1}`)
-    .replace(/(?:あと|あっと|@)(?:4人|4)([^回])/g, (s, s1) => `@4${s1}`)
-    .replace(/(\n[^\n]{0,1}主[^\n]+)((?:募集|募|求)[^\n]+\n)/g, (a0, a1, a2) => `${a1}\n${a2}`);
+    .replace(/(\n[^\n]{0,1}主[^\n]+)((?:募集|募|求)[^\n]+\n)/g, (a0, a1, a2) => `${a1}\n${a2}`)
+    // load options
+    .replace(/STAMP1/g, "もう一回");
 
-  const roomId = /[^@0-9]([0-9][0-9][0-9][0-9][0-9])[^回0-9]/.exec(str)?.[1];
-  const isVeteranRoom = /ベテラン/.test(str);
-  const isMVRoom = /(3dmv|mv)[^\n]{0,1}[^❌]/.test(str);
+  const roomId = /[^@0-9]([0-9][0-9][0-9][0-9][0-9])[^回0-9]/.exec(content)?.[1];
+  const isVeteranRoom = /ベテラン/.test(content);
+  const isMVRoom = /(3dmv|mv)[^\n]{0,1}[^❌]/.test(content);
 
   let limitMusic = null;
   if (!isMVRoom) {
-    if (/おまかせ[^\n]{0,1}[^❌]/.test(str)) {
+    if (/おまかせ[^\n]{0,1}[^❌]/.test(content)) {
       limitMusic = "おまかせ";
-    } else if (/🦐[^\n]{0,1}[^❌]/.test(str)) {
+    } else if (/🦐[^\n]{0,1}[^❌]/.test(content)) {
       limitMusic = "🦐";
-    } else if (/ロスエン[^\n]{0,1}[^❌]/.test(str)) {
+    } else if (/ロスエン[^\n]{0,1}[^❌]/.test(content)) {
       limitMusic = "ロスエン";
-    } else if (/sage[^\n]{0,1}[^❌]/.test(str)) {
+    } else if (/sage[^\n]{0,1}[^❌]/.test(content)) {
       limitMusic = "sage";
-    } else if (/選曲[^\n]{0,1}[^❌]/.test(str)) {
+    } else if (/選曲[^\n]{0,1}[^❌]/.test(content)) {
       limitMusic = "選曲";
     }
   }
 
-  const allowPlayForStaminaEmpty = !/火消し[^\n]{0,1}❌/.test(str);
-  const allowEasyModeWithAFK = /いじぺち[^\n]{0,1}[^❌]/.test(str);
-  const maxPlay = /(周)回/.exec(str)?.[1] || /[^もう]([0-9]+)回/.exec(str)?.[1];
-  const playersNeeded = /@[^\n]{0,1}([0-9])+/.exec(str)?.[1];
-  const hostStat = /\n[^\n]{0,1}(?:主)([^\n]+)\n/.exec(str)?.[1]?.replace(/%/g, "% ")?.trim();
-  const guestStat = /\n[^\n]{0,1}(?:募集|募|求)([^\n]+)\n/.exec(str)?.[1]?.replace(/%/g, "% ")?.trim();
+  const allowPlayForStaminaEmpty = !/火消し[^\n]{0,1}❌/.test(content);
+  const allowEasyModeWithAFK = /いじぺち[^\n]{0,1}[^❌]/.test(content);
+  const playsRemaining = /(周回|[0-9]+回)/.exec(content)?.[1];
+  const playersNeeded = /(@[^\n]{0,1}[1-4])+/.exec(content)?.[1]?.replace(/(@)[^\n]{0,1}([1-4])/, (s, s1, s2) => `${s1}${s2}`);
+  const hostStat = /\n[^\n]{0,1}(?:主)([^\n]+)\n/.exec(content)
+    ?.[1]
+    ?.replace(/%/g, "% ")
+    ?.replace(/\//g, " / ")
+    ?.replace(/[^\S\r\n]+/g, " ")
+    ?.trim();
+  const guestStat = /\n[^\n]{0,1}(?:募集|募|求)([^\n]+)\n/.exec(content)
+    ?.[1]
+    ?.replace(/%/g, "% ")
+    ?.replace(/\//g, " / ")
+    ?.replace(/[^\S\r\n]+/g, " ")
+    ?.trim();
   
   return {
     roomId,
@@ -198,10 +269,86 @@ function parsePostContent(str) {
     allowPlayForStaminaEmpty,
     allowEasyModeWithAFK,
     limitMusic,
-    maxPlay,
+    playsRemaining,
     playersNeeded,
     hostStat,
     guestStat,
+    originalContent,
+  }
+}
+
+function getValuesFromData(data) {
+  let {
+    roomId,
+    isVeteranRoom,
+    isMVRoom,
+    allowPlayForStaminaEmpty,
+    allowEasyModeWithAFK,
+    limitMusic,
+    playsRemaining,
+    playersNeeded,
+    hostStat,
+    guestStat,
+    content,
+    originalContent,
+  } = data;
+
+  // normalize
+  content = util.toHalfWidth(content)
+    .replace(/[^\S\r\n]+/g, " ")
+    .replace(/r\n/g, "\n")
+    .replace(/\n+/g, "\n")
+    // remove kanji numbers
+    .replace(/一人/g, "1人")
+    .replace(/二人/g, "2人")
+    .replace(/三人/g, "3人")
+    .replace(/四人/g, "4人")
+    // remove hiragana
+    .replace(/あっと([^\S\r\n]*[1-4]+)/g, (s, s1) => `@${s1}`)
+    .replace(/ひとり/g, "1人")
+    .replace(/ふたり/g, "2人")
+    // remove あと following 回
+    .replace(/(?:あと)[^\S\r\n]*([0-9]+)[^\S\r\n]*回/g, (s, s1) => `${s1}回`)
+    // remove あと following 人
+    .replace(/(?:あと|@)[^\S\r\n]*([1-4])+[^\S\r\n]*人?/g, (s, s1) => `@${s1}`)
+
+  // set playersNeeded
+  if (playersNeeded) {
+    const re = new RegExp(`(?:あと|あっと|@)[^\\n]{0,1}(?:ひとり|ふたり|[1-4]人|[1-4]+|いち)`);
+    content = content.replace(re, playersNeeded);
+  } else {
+    // default @4
+    playersNeeded = "@4";
+    const re = new RegExp(`(${roomId}[^\n]*)\n`);
+    content = content.replace(re, (e, e1) => `${e1} ${playersNeeded}\n`);
+  }
+
+  // set playsRemaining
+  if (playsRemaining) {
+    content = content.replace(/(周|[0-9]+)[^\n]{0,1}回/, playsRemaining);
+  } else {
+    // default 周回
+    playsRemaining = "周回";
+    const re = new RegExp(`(${roomId}[^\n]*)\n`);
+    content = content.replace(re, (e, e1) => `${e1} ${playsRemaining}\n`);
+  }
+
+  return {
+    roomId,
+    isVeteranRoom,
+    isMVRoom,
+    allowPlayForStaminaEmpty,
+    allowEasyModeWithAFK,
+    limitMusic,
+    playsRemaining,
+    playersNeeded,
+    hostStat,
+    guestStat,
+    stamp1: false,
+    stamp2: false,
+    stamp3: false,
+    content,
+    originalContent,
   }
 }
 
@@ -212,7 +359,7 @@ function getWriteModalValues() {
   const allowPlayForStaminaEmpty = document.getElementById("write-room-type-3").checked;
   const allowEasyModeWithAFK = document.getElementById("write-room-type-4").checked;
   const limitMusic = document.querySelector("input[name='write-limit-music']:checked").value;
-  const maxPlay = document.querySelector("input[name='write-max-play']:checked").value;
+  const playsRemaining = document.querySelector("input[name='write-plays-remaining']:checked").value;
   const playersNeeded = document.querySelector("input[name='write-players-needed']:checked").value;
   const hostRank = document.querySelector("input[name='write-host-rank']:checked").value;
   const guestRank = document.querySelector("input[name='write-guest-rank']:checked").value;
@@ -227,10 +374,10 @@ function getWriteModalValues() {
     allowPlayForStaminaEmpty,
     allowEasyModeWithAFK,
     limitMusic,
-    maxPlay,
+    playsRemaining,
     playersNeeded,
-    hostRank,
-    guestRank,
+    hostStat: hostRank,
+    guestStat: guestRank,
     stamp1,
     stamp2,
     stamp3,
@@ -238,16 +385,16 @@ function getWriteModalValues() {
 }
 
 function getRoomModalValues() {
-  const maxPlay = document.querySelector("input[name='room-max-play']:checked").value;
+  const playsRemaining = document.querySelector("input[name='room-plays-remaining']:checked").value;
   const playersNeeded = document.querySelector("input[name='room-player-needed']:checked").value;
 
   return {
-    maxPlay,
+    playsRemaining,
     playersNeeded,
   }
 }
 
-function createPostContent() {
+function createRoomContent() {
   const {
     roomId,
     isVeteranRoom,
@@ -255,10 +402,10 @@ function createPostContent() {
     isMVRoom,
     allowPlayForStaminaEmpty,
     allowEasyModeWithAFK,
-    maxPlay,
+    playsRemaining,
     playersNeeded,
-    hostRank,
-    guestRank,
+    hostStat,
+    guestStat,
     stamp1,
     stamp2,
     stamp3,
@@ -280,10 +427,10 @@ function createPostContent() {
   if (limitMusic && limitMusic !== "") {
     text += `${limitMusic} `;
   }
-  text += maxPlay + "\n\n";
+  text += playsRemaining + "\n\n";
   text += `🔑 ${roomId} ${playersNeeded}\n`
-  text += `主 : ${hostRank}\n`;
-  text += `募 : ${guestRank}\n\n`;
+  text += `主 : ${hostStat}\n`;
+  text += `募 : ${guestStat}\n\n`;
 
   if (stamp1) {
     text += `一時的な退室 : もう一回みのり\n`;
@@ -297,18 +444,40 @@ function createPostContent() {
 
   // text += `Posted by pjsk pr\n\n`;
 
-  return text;
+  text += "#プロセカ募集 #プロセカ協力";
+
+  __room__.content = text;
 }
 
-function checkPostContent(content) {
+function setRoomPlayersNeeded() {
+  if (!/@([1-4])+/.test(__room__.content)) {
+    __room__.content = `${__room__.playersNeeded}\n${__room__.content}`;
+  } else {
+    __room__.content = __room__.content
+      .replace(/@[1-4]+/, __room__.playersNeeded);
+  }
+}
+
+function setRoomPlaysRemainging() {
+  if (!/周回|([^もう])[0-9]+回/.test(__room__.content)) {
+    __room__.content = __room__.content
+      .relace(/@[1-4]+/, 
+        (e) => `${e} ${__room__.playsRemaining}`);
+  } else {
+    __room__.content = __room__.content
+      .replace(/周回|([^もう])[0-9]+回/, 
+        (s, s1) => `${s1 || ""}${__room__.playsRemaining}`);
+  }
+}
+
+function checkRoomContent() {
+  let content = __room__.content;
+
   // fix dupe error
   let count = 0;
   if (/@([0-9])/.test(content)) {
     while(__contents__.indexOf(content) > -1) {
-      content = content.replace(/@([0-9])/, function(str, num) {
-        return str + num;
-      });
-  
+      content = content.replace(/@([1-4])/, (s, n) => `${s}${n}`);
       count++;
     }
   } else {
@@ -317,21 +486,21 @@ function checkPostContent(content) {
 
   __contents__.push(content);
 
-  return content;
+  __room__.content = content;
 }
 
 function renderRoomModal() {
-  const {
+  let {
     roomId,
     isVeteranRoom,
     isMVRoom,
     limitMusic,
     allowPlayForStaminaEmpty,
     allowEasyModeWithAFK,
-    maxPlay,
+    playsRemaining,
     playersNeeded,
-    hostRank,
-    guestRank,
+    hostStat,
+    guestStat,
     stamp1,
     stamp2,
     stamp3,
@@ -346,7 +515,7 @@ function renderRoomModal() {
   const container = document.createElement("div");
   
   const optElem = document.createElement("div");
-  optElem.className = "mb-3";
+  optElem.className = "mb-2";
   let opt = "";
 
   // room settings
@@ -367,8 +536,12 @@ function renderRoomModal() {
   }
 
   // stats
-  opt += `<span class="badge text-bg-warning">主 ${hostRank}</span>\n`;
-  opt += `<span class="badge text-bg-warning">募 ${guestRank}</span>\n`;
+  if (hostStat && hostStat.trim() !== "") {
+    opt += `<span class="badge text-bg-warning">主 ${hostStat.trim()}</span>\n`;
+  }
+  if (guestStat && guestStat.trim() !== "") {
+    opt += `<span class="badge text-bg-warning">募 ${guestStat.trim()}</span>\n`;
+  }
 
   // stamps
   if (stamp1) {
@@ -383,35 +556,42 @@ function renderRoomModal() {
 
   optElem.innerHTML = opt;
 
-  const maxPlayElem = document.createElement("div");
-  maxPlayElem.className = "mb-3";
+  const playsRemainingElem = document.createElement("div");
+  playsRemainingElem.className = "mb-2";
+
+  let playsRemainingChecked = false;
   for (let i = 1; i < 11; i++) {
-    maxPlayElem.innerHTML += `
+    playsRemainingElem.innerHTML += `
 <div class="form-check form-check-inline">
   <input 
     class="form-check-input" 
     type="radio"
-    id="room-max-play-${i}"
-    name="room-max-play" 
-    value="${i+"回"}" ${maxPlay === i+"回" ? "checked": ""}>
-  <label class="form-check-label" for="room-max-play-${i}">${i}回</label>
+    id="room-plays-remaining-${i}"
+    name="room-plays-remaining" 
+    value="${i+"回"}" ${playsRemaining === i+"回" ? "checked": ""}>
+  <label class="form-check-label" for="room-plays-remaining-${i}">${i}回</label>
 </div>
     `.trim() + "\n";
+
+    if (!playsRemainingChecked) {
+      playsRemainingChecked = playsRemaining === i+"回";
+    }
   }
-  maxPlayElem.innerHTML += `
+  playsRemainingElem.innerHTML += `
 <div class="form-check form-check-inline">
   <input 
     class="form-check-input" 
     type="radio"
-    id="room-max-play-11"
-    name="room-max-play" 
-    value="周回" ${maxPlay === "周回" ? "checked": ""}>
-  <label class="form-check-label" for="room-max-play-11">周回</label>
+    id="room-plays-remaining-11"
+    name="room-plays-remaining" 
+    value="周回" ${playsRemaining === "周回" || !playsRemainingChecked ? "checked": ""}>
+  <label class="form-check-label" for="room-plays-remaining-11">周回</label>
 </div>
   `.trim() + "\n";
 
-  const playersElem = document.createElement("div");
-  playersElem.innerHTML = `
+  let playersNeededChecked = /@[1-4]/.test(playersNeeded);
+  const playersNeededElem = document.createElement("div");
+  playersNeededElem.innerHTML = `
 <div class="form-check form-check-inline">
   <input 
     class="form-check-input" 
@@ -445,14 +625,14 @@ function renderRoomModal() {
     type="radio"
     id="room-player-needed-4"
     name="room-player-needed" 
-    value="@4" ${playersNeeded === "@4" ? "checked": ""}>
+    value="@4" ${playersNeeded === "@4" || !playersNeededChecked ? "checked": ""}>
   <label class="form-check-label" for="room-player-needed-4">@4</label>
 </div>
   `.trim() + "\n";
 
   container.appendChild(optElem);
-  container.appendChild(maxPlayElem);
-  container.appendChild(playersElem);
+  container.appendChild(playsRemainingElem);
+  container.appendChild(playersNeededElem);
   bodyElem.appendChild(container);
 }
 
@@ -469,16 +649,31 @@ function showMsg(text) {
 function removeExpiredPosts() {
   let ids = [];
   for (const post of __table__.getData()) {
-    if (moment(post.date).valueOf() + EXPIRE_TIME < Date.now()) {
+    if (post.time + EXPIRE_TIME < Date.now()) {
       ids.push(post.roomId);
     }
   }
 
-  __table__.deleteRow(ids);
-
   if (ids.length > 0) {
+    __table__.deleteRow(ids);
     console.log(`${ids.length} posts has been expired.`);
   }
+}
+
+function loading(elem, count) {
+  let orig = elem.innerHTML;
+  let timer = null;
+  (function countdown() {
+    if (count > 0) {
+      timer = setTimeout(countdown, 1000);
+      elem.disabled = true;
+      elem.innerHTML = count;
+    } else {
+      elem.disabled = false;
+      elem.innerHTML = orig;
+    }
+    count -= 1;
+  })();
 }
 
 function resumeCollector() {
@@ -490,19 +685,38 @@ function pauseCollector() {
 }
 
 function writePost() {
-  let content = createPostContent();
+  console.log("write:\n", __room__.content);
+  if (DEBUG) {
+    writeModal.hide();
 
-  content = checkPostContent(content);
+    // stop collect
+    pauseCollector();
 
-  sendMsg("write-post", content);
+    // render room modal comtent
+    renderRoomModal();
+
+    // create room modal timer
+    const timeElem = document.getElementById("room-modal-time");
+    const startedAt = moment();
+    roomModalTimer = setInterval(function() {
+      timeElem.innerHTML = moment.utc(moment.duration(moment().diff(startedAt)).valueOf()).format("HH:mm:ss");
+    });
+
+    roomModal.show();
+
+    loading(document.getElementById("room-update"), 5);
+  } else {
+    sendMsg("write-post", __room__.content);
+  }
 }
 
 function updatePost() {
-  let content = createPostContent();
-
-  content = checkPostContent(content);
-
-  sendMsg("update-post", content);
+  console.log("update:\n", __room__.content);
+  if (DEBUG) {
+    showMsg("The room has been updated.");
+  } else {
+    sendMsg("update-post", __room__.content);
+  }
 }
 
 // get collect response
@@ -516,6 +730,9 @@ getMsg("collect", function(err, req, event) {
 
   // covert new posts
   let newPosts = req.map(function(post) {
+    // set time
+    post.time = moment(post.date).valueOf();
+
     return Object.assign(post, parsePostContent(post.content));
   });
 
@@ -524,14 +741,12 @@ getMsg("collect", function(err, req, event) {
     if (!curr.roomId) {
       return prev;
     }
-
     if (
       !prev[curr.roomId] || 
-      moment(prev[curr.roomId].date).valueOf() < moment(curr.date).valueOf()
+      prev[curr.roomId].time < curr.time
     ) {
       prev[curr.roomId] = curr;
     }
-
     return prev;
   }, {});
 
@@ -539,7 +754,7 @@ getMsg("collect", function(err, req, event) {
 
   newPosts = newPosts.filter(function(newPost) {
     // expired
-    if (moment(newPost.date).valueOf() + EXPIRE_TIME < Date.now()) {
+    if (newPost.time + EXPIRE_TIME < Date.now()) {
       return false;
     }
     const oldPost = oldPosts.find(function(p) {
@@ -550,7 +765,7 @@ getMsg("collect", function(err, req, event) {
       return true;
     }
     // update post
-    if (moment(oldPost.date).valueOf() < moment(newPost.date).valueOf()) {
+    if (oldPost.time < newPost.time) {
       return true;
     }
     // invalid post
@@ -560,12 +775,11 @@ getMsg("collect", function(err, req, event) {
 
   if (newPosts.length > 0) {
     console.log("New Posts:", newPosts);
-
     __table__.updateOrAddData(newPosts)
       .then(function() {
         // refresh sort
         __table__.setSort(INITIAL_SORT);
-      })
+      });
   }
 });
 
@@ -591,6 +805,8 @@ getMsg("write", function(err, req) {
     });
 
     roomModal.show();
+
+    loading(document.getElementById("room-update"), 5);
   }
 });
 
@@ -602,6 +818,7 @@ getMsg("update", function(err, req) {
   } else {
     showMsg("The room has been updated.");
   }
+  loading(document.getElementById("room-update"), 5);
 });
 
 // open write modal
@@ -628,11 +845,17 @@ document.getElementById("write-submit").addEventListener("click", function(e) {
     return;
   }
 
+  // create content
+  createRoomContent();
+
+  // check dupe
+  checkRoomContent();
+
   writePost();
 });
 
 // open room modal
-// document.getElementById("room-modal").addEventListener('shown.bs.modal', function(e) {
+// document.getElementById("room-modal").addEventListener('show.bs.modal', function(e) {
 //   ...
 // });
 
@@ -644,16 +867,24 @@ document.getElementById("room-close").addEventListener("click", function(e) {
     roomModalTimer = null;
   }
 
+  // resume collector
   resumeCollector();
 });
 
 // update room
 document.getElementById("room-update").addEventListener("click", function(e) {
-  const { maxPlay, playersNeeded } = getRoomModalValues();
+  const { playsRemaining, playersNeeded } = getRoomModalValues();
 
-  // update
-  __room__.maxPlay = maxPlay;
+  // update room data
   __room__.playersNeeded = playersNeeded;
+  __room__.playsRemaining = playsRemaining;
+
+  // update room content
+  setRoomPlayersNeeded();
+  setRoomPlaysRemainging();
+
+  // check dupe
+  checkRoomContent();
 
   updatePost();
 });
@@ -665,11 +896,7 @@ document.getElementById("open-git").addEventListener("click", function(e) {
 document.addEventListener("keydown", function(e) {
   const { shiftKey, key } = e;
   const ctrlKey = e.ctrlKey || e.metaKey;
-  if (ctrlKey && !shiftKey && key === "d") {
-    e.preventDefault();
-    e.stopPropagation();
-    sendMsg("debug");
-  } else if (ctrlKey && shiftKey && key.toLowerCase() === "i") {
+  if (ctrlKey && shiftKey && key.toLowerCase() === "i") {
     e.preventDefault();
     e.stopPropagation();
     sendMsg("console");
@@ -678,8 +905,11 @@ document.addEventListener("keydown", function(e) {
 
 createTable();
 
-// room modal debug
-// __room__ = getWriteModalValues();
-// __room__.roomId = "39393";
-// renderRoomModal();
-// roomModal.show()
+// if (DEBUG) {
+//   // room modal debug
+//   __room__ = getWriteModalValues();
+//   __room__.roomId = "39393";
+//   __room__.content = ``;
+//   renderRoomModal();
+//   roomModal.show()
+// }

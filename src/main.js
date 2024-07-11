@@ -42,7 +42,9 @@ const READ_URLS = [
 ];
 
 // const TEST_URL = `https://x.com/intent/post?text=${encodeURIComponent("Lorem ipsum")}`;
-const WRITE_URL = "https://x.com/intent/post?hashtags=%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86,%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B&text=";
+// const WRITE_URL = "https://x.com/intent/post?hashtags=%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86,%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B&text=";
+const WRITE_URL = "https://x.com/intent/post?text=";
+const UPDATE_URL = "https://x.com/intent/post?text=";
 const DEBUG = false;
 
 if (!DEBUG) {
@@ -299,12 +301,11 @@ getMsg("update-post", async function(err, msg) {
     console.error(err);
     return;
   }
-  await createUpdaterWindow(`${WRITE_URL}${encodeURIComponent(msg)}`);
+  await createUpdaterWindow(`${UPDATE_URL}${encodeURIComponent(msg)}`);
 });
 
 getMsg("write", async function(err, msg) {
   closeWriterWindow();
-  
   if (err) {
     console.error(err);
     sendErr("write", err);
@@ -315,7 +316,6 @@ getMsg("write", async function(err, msg) {
 
 getMsg("update", async function(err, msg) {
   closeUpdaterWindow();
-  
   if (err) {
     console.error(err);
     sendErr("update", err);
@@ -324,28 +324,24 @@ getMsg("update", async function(err, msg) {
   }
 });
 
-getMsg("debug", function(err, msg) {
-  if (err) {
-    console.error(err);
-    return;
-  }
-  if (collectorWindow.isVisible()) {
-    collectorWindow.hide();
-  } else {
-    collectorWindow.show();
-  }
-});
-
 getMsg("console", function(err, msg) {
   if (err) {
     console.error(err);
     return;
   }
+
+  if (collectorWindow.isVisible()) {
+    collectorWindow.hide();
+  } else {
+    collectorWindow.show();
+  }
+
   if (mainWindow.webContents.isDevToolsOpened()) {
     mainWindow.webContents.closeDevTools();
   } else {
     mainWindow.webContents.openDevTools();
   }
+
   if (collectorWindow.webContents.isDevToolsOpened()) {
     collectorWindow.webContents.closeDevTools();
   } else {

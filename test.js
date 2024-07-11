@@ -1,9 +1,7 @@
 import * as util from "./src/js/util.min.mjs";
 
-const str = `
-2】
-主 150% 募 130%
-長時間歓迎 スタン
-`
+const str = `あと1111111人`;
 
-console.log(str.replace(/(\n[^\S\r\n]{0,2}主[^\n]+)((?:募集|募|求)[^\n]+\n)/g, (a0, a1, a2) => `${a1}\n${a2}`))
+const res = str.replace(/(?:あと|@)([1-4])+人?/g, (s, s1) => `@${s1}`);
+
+console.log(res)

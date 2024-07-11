@@ -208,7 +208,8 @@ async function getPosts() {
 
   function getContentHTML(post) {
     const elem = post.querySelector("div[data-testid='tweetText']");
-    return elem ? elem.innerHTML : null;
+    // remove links
+    return elem ? elem.innerHTML.replace(/href="[^"]+"/g, 'href="javascript:void(0);"') : null;
   }
 
   const posts = document.querySelectorAll("article[role='article']");

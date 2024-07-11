@@ -54,19 +54,19 @@ Search for Project SEKAI public room from twitter.
 
 Sign in to twitter. (need to once)
 
-Create a room
+#### Create a room
 
-1\. Click "New Room" button.
-2\. Customize room settings.
-3\. Click "Create" button.
-4\. You can update required number of players and number of plays remaining.
+1. Click "New Room" button.
+2. Customize room settings.
+3. Click "Create" button.
+4. You can update required number of players and number of plays remaining.
 
-Join room
+#### Join room
 
-1\. Wait until the room appears.
-2\. Click row.
-3\. Click "Join" button.
-4\. You can update room with original content.
+1. Wait until the room appears.
+2. Click row.
+3. Click "Join" button.
+4. You can update room with original content.
 
 ## Updates
 

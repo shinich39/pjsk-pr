@@ -1,6 +1,7 @@
 const { sendMsg, sendErr, getMsg, waitMsg } = window.electron;
 // init moment
 try {
+  // console.log("Current URL:", window.location.href);
   console.log("Found device languages:", navigator.languages?.[0], navigator.language);
   moment.relativeTimeThreshold('ss', 0);
   moment.locale(navigator.languages?.[0] || navigator.language || "ja-JP");
@@ -45,19 +46,26 @@ const ROW_FORMATTER = {
     }
 
     let { guestStat } = row.getData();
+    if (!guestStat) {
+      elem.style.backgroundColor = "";
+      return;
+    }
+
     guestStat = "   " + guestStat.replace(/実効値|実効|実/, "実効値");
     
     let readerPowerLimit = /(?:[^実][^効][^値])([1][0-9][0-9])/.exec(guestStat)?.[1];
     let appliedPowerLimit = readerPowerLimit ?
-      /(?:[1][0-9][0-9])[^\n0-9]+([1-2][0-9][0-9])/g.exec(guestStat)?.[1] :
-      /(?:実効値)([1-2][0-9][0-9])/.exec(guestStat)?.[1];
+      /(?:[1][0-9][0-9])[^\n0-9]+([1-3][0-9][0-9])/g.exec(guestStat)?.[1] :
+      /(?:実効値)([1-3][0-9][0-9])/.exec(guestStat)?.[1] || /([1-3][0-9][0-9])/.exec(guestStat)?.[1];
 
-    if (readerPowerLimit && __readerPower__ < readerPowerLimit) {
+    if (__readerPower__ && readerPowerLimit && __readerPower__ < readerPowerLimit) {
+      console.log(__readerPower__)
       elem.style.backgroundColor = ROW_BACKGROUND_COLORSET[0];
       return;
     }
 
-    if (__appliedPower__ && __appliedPower__ < appliedPowerLimit) {
+    if (__appliedPower__ && appliedPowerLimit && __appliedPower__ < appliedPowerLimit) {
+      console.log(__appliedPower__)
       elem.style.backgroundColor = ROW_BACKGROUND_COLORSET[0];
       return;
     }
@@ -756,6 +764,35 @@ function updatePost() {
   }
 }
 
+function saveCookies(arr) {
+  sendMsg("set-cookies", arr);
+}
+
+getMsg("get-cookies", function(err, req) {
+  if (err) {
+    console.error(err);
+    showErr(err.message);
+  } else {
+    console.log("get-cookies", req);
+
+    const values = [
+      req.find((e) => e.name === "power-1")?.value,
+      req.find((e) => e.name === "power-2")?.value,
+      req.find((e) => e.name === "power-3")?.value,
+      req.find((e) => e.name === "power-4")?.value,
+      req.find((e) => e.name === "power-5")?.value,
+    ];
+
+    document.getElementById("power-input-1").value = values[0] || "";
+    document.getElementById("power-input-2").value = values[1] || "";
+    document.getElementById("power-input-3").value = values[2] || "";
+    document.getElementById("power-input-4").value = values[3] || "";
+    document.getElementById("power-input-5").value = values[4] || "";
+
+    setPowers();
+  }
+});
+
 // get collect response
 getMsg("collect", function(err, req, event) {
   if (err) {
@@ -937,9 +974,18 @@ function calcPowerRange() {
     document.getElementById("power-input-3").value,
     document.getElementById("power-input-4").value,
     document.getElementById("power-input-5").value,
-  ].map(function(item) {
+  ];
+  
+  const ranges = values.map(function(item) {
     return util.isNumeric(item) ? [parseInt(item), parseInt(item)] : [MIN_POWER, MAX_POWER];
   });
+
+  saveCookies(values.map(function(v, i) {
+    return {
+      key: `power-${i + 1}`,
+      value: v,
+    }
+  }));
 
   let readerPower;
   let minPowers = [
@@ -956,10 +1002,10 @@ function calcPowerRange() {
     Number.MIN_SAFE_INTEGER,
     Number.MIN_SAFE_INTEGER,
   ];
-  for (let i = 0; i < values.length; i++) {
+  for (let i = 0; i < ranges.length; i++) {
     const rate = POWER_RATES[i];
-    const mnp = values[i][0] * rate;
-    const mxp = values[i][1] * rate;
+    const mnp = ranges[i][0] * rate;
+    const mxp = ranges[i][1] * rate;
     if (i === 0) {
       readerPower = mnp === mxp ? mnp : null;
     }
@@ -978,6 +1024,26 @@ function calcPowerRange() {
   ];
 }
 
+function setPowers() {
+  const input = document.getElementById("power-input-6");
+  const [r, a, b] = calcPowerRange();
+
+  // set reader power
+  __readerPower__ = r;
+
+  // set applied power
+  if (a === b) {
+    input.value = `${a}%`;
+    __appliedPower__ = a;
+  } else {
+    input.value = `${a}% ~ ${b}%`;
+    __appliedPower__ = b;
+  }
+
+  // redraw
+  __table__.redraw(true);
+}
+
 [
   document.getElementById("power-input-1"),
   document.getElementById("power-input-2"),
@@ -985,25 +1051,7 @@ function calcPowerRange() {
   document.getElementById("power-input-4"),
   document.getElementById("power-input-5"),
 ].forEach(function(elem, idx) {
-  elem.addEventListener("input", function(e) {
-    const target = document.getElementById("power-input-6");
-    const [r, a, b] = calcPowerRange();
-
-    // set reader power
-    __readerPower__ = r;
-
-    // set applied power
-    if (a === b) {
-      target.value = `${a}%`;
-      __appliedPower__ = a;
-    } else {
-      target.value = `${a}% ~ ${b}%`;
-      __appliedPower__ = null;
-    }
-
-    // redraw
-    __table__.redraw(true);
-  });
+  elem.addEventListener("input", setPowers);
 });
 
 document.addEventListener("keydown", function(e) {

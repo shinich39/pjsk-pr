@@ -77,3 +77,5 @@ Sign in to twitter. (need to once)
 - Prevent duplicate updates.
 - Change to preview modal from popup.
 - Add applied power calculator and highlight rooms that not meeting power required.
+- Save power values.
+- Error fix.

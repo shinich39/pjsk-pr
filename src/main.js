@@ -8,6 +8,7 @@ import {
   dialog,
   Menu,
   shell,
+  session,
 } from "electron";
 import path from "node:path";
 import fs from "node:fs";
@@ -195,6 +196,18 @@ function onWindowLoad() {
     }, 1000);
 
     isInitialized = true;
+  } else {
+    // send cookie
+    session.defaultSession.cookies.get({
+        url: "http://localhost/"
+      })
+      .then(function(cookies) {
+        // console.log("cookies", cookies);
+        sendMsg("get-cookies", cookies);
+      })
+      .catch(function(err) {
+        console.log(err);
+      });
   }
 }
 /**
@@ -321,6 +334,27 @@ getMsg("update", async function(err, msg) {
     sendErr("update", err);
   } else {
     sendMsg("update");
+  }
+});
+
+getMsg("set-cookies", async function(err, msg) {
+  if (err) {
+    console.error(err);
+  } else {
+    for (const data of msg) {
+      try {
+        await session.defaultSession.cookies.set({
+          url: "http://localhost/",
+          name: data.key,
+          value: data.value,
+          expirationDate: new Date().setFullYear(new Date().getFullYear() + 100),
+        });
+
+        console.log(`Cookie saved: ${data.key}: ${data.value}`);
+      } catch(err) {
+        console.error(err);
+      }
+    }
   }
 });
 

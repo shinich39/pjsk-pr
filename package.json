@@ -1,5 +1,5 @@
 {
-  "name": "pjsk-pr",
+  "name": "pjsk-public-room",
   "version": "1.0.0",
   "description": "Search for Project SEKAI public room from twitter.",
   "main": "src/main.js",
@@ -15,16 +15,16 @@
     "build:linux": "electron-builder --linux"
   },
   "build": {
-    "productName": "pjsk pr",
-    "appId": "com.shinich39.pjskpr",
+    "productName": "pjsk public room",
+    "appId": "com.shinich39.pjskpublicroom",
     "artifactName": "${productName}-${version}.${ext}",
     "copyright": "Copyright © year ${author}",
     "asar": true,
     "removePackageScripts": true,
     "protocols": {
-      "name": "pjsk pr",
+      "name": "pjsk public room",
       "schemes": [
-        "pjskpr"
+        "pjskpublicroom"
       ]
     },
     "directories": {
@@ -65,7 +65,7 @@
       "desktop": {
         "StartupNotify": "false",
         "Encoding": "UTF-8",
-        "MimeType": "x-scheme-handler/pjskpr"
+        "MimeType": "x-scheme-handler/pjskpublicroom"
       },
       "target": [
         "AppImage",

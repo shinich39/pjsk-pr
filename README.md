@@ -1,4 +1,4 @@
-# pjsk-pr
+# pjsk-public-room
 
 Search for Project SEKAI public room from twitter.
 

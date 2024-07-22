@@ -1,7 +1,6 @@
 const { sendMsg, sendErr, getMsg, waitMsg } = window.electron;
 // init moment
 try {
-  // console.log("Current URL:", window.location.href);
   console.log("Found device languages:", navigator.languages?.[0], navigator.language);
   moment.relativeTimeThreshold('ss', 0);
   moment.locale(navigator.languages?.[0] || navigator.language || "ja-JP");
@@ -59,13 +58,11 @@ const ROW_FORMATTER = {
       /(?:実効値)([1-3][0-9][0-9])/.exec(guestStat)?.[1] || /([1-3][0-9][0-9])/.exec(guestStat)?.[1];
 
     if (__readerPower__ && readerPowerLimit && __readerPower__ < readerPowerLimit) {
-      console.log(__readerPower__)
       elem.style.backgroundColor = ROW_BACKGROUND_COLORSET[0];
       return;
     }
 
     if (__appliedPower__ && appliedPowerLimit && __appliedPower__ < appliedPowerLimit) {
-      console.log(__appliedPower__)
       elem.style.backgroundColor = ROW_BACKGROUND_COLORSET[0];
       return;
     }
@@ -465,7 +462,7 @@ function createRoomContent() {
     text += `抜ける              : またね系\n\n`;
   }
 
-  // text += `Posted by pjsk pr\n\n`;
+  // text += `Posted by pjsk public room\n\n`;
 
   text += "#プロセカ募集 #プロセカ協力";
 
